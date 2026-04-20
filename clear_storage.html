@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>清除存储</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>清除本地存储</h1>
+        <p>点击下面的按钮清除登录状态和所有数据</p>
+        <button onclick="clearStorage()">清除所有存储</button>
+        <button onclick="window.location.href='记事本.html'">返回记事本</button>
+        <div id="message"></div>
+    </div>
+    <script>
+        function clearStorage() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('passwordHash');
+            localStorage.removeItem('encryptedNotes');
+            localStorage.removeItem('myNotes');
+            document.getElementById('message').innerHTML = '<p style="color: green;">存储已清除！</p>';
+        }
+    </script>
+</body>
+</html>
