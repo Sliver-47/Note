@@ -1,8 +1,8 @@
 ﻿{
   "name": "拾光",
-  "short_name": "记事本",
+  "short_name": "拾光",
   "description": "一个简洁美观的个人记事本应用",
-  "start_url": "/记事本.html",
+  "start_url": "/notes.html",
   "display": "standalone",
   "background_color": "#667eea",
   "theme_color": "#667eea",
