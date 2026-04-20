@@ -41,9 +41,23 @@
             transition: all 0.3s;
         }
 
+        /* 占位符颜色区分 */
+        #noteTitle::placeholder {
+            color: #666;
+            opacity: 1;
+        }
+
+        #noteContent:empty::before {
+            content: attr(data-placeholder);
+            color: #999;
+            pointer-events: none;
+        }
+
         .dark body { background: var(--bg-primary); }
         .dark .glass { background: var(--bg-glass); color: var(--text-primary); }
         .dark .text-gray-800 { color: #f3f4f6; }
+        .dark #noteTitle::placeholder { color: #aaa; }
+        .dark #noteContent:empty::before { color: #888; }
         .dark .text-gray-700 { color: #e5e7eb; }
         .dark .text-gray-600 { color: #d1d5db; }
         .dark .text-gray-500 { color: #9ca3af; }
@@ -108,12 +122,13 @@
         .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-4xl mx-auto">
-        <!-- 头部 -->
-        <header class="glass rounded-3xl p-6 mb-6 shadow-2xl">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex items-center gap-3">
+<body class="p-4 md:p-8 min-h-screen">
+    <div class="flex flex-col md:flex-row gap-6">
+        <!-- 左侧笔记列表 -->
+        <div class="w-full md:w-80 flex-shrink-0">
+            <!-- 头部 -->
+            <div class="glass rounded-3xl p-6 mb-6 shadow-2xl">
+                <div class="flex items-center gap-3 mb-4">
                     <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
                         <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -125,125 +140,480 @@
                     </div>
                 </div>
 
-                <div class="flex gap-2">
+                <div class="flex gap-2 mb-4">
                     <button onclick="toggleTheme()" class="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors" title="切换主题">
                         <svg id="themeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                         </svg>
                     </button>
-                    <button onclick="exportNotes()" class="hidden md:flex items-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-medium">
+                    <button onclick="toggleBackgroundSettings()" class="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors" title="设置背景">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
-                        导出
+                    </button>
+                    <button onclick="toggleBackupManager()" class="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors" title="备份管理">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
                     </button>
                 </div>
-            </div>
 
-            <!-- 搜索框 -->
-            <div class="mt-4">
-                <div class="relative">
-                    <input type="text" id="searchInput" placeholder="搜索笔记或 #标签..."
-                        class="w-full pl-10 pr-4 py-3 rounded-xl border-2 focus:border-indigo-500 focus:outline-none transition-all">
-                    <svg class="w-5 h-5 absolute left-3 top-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                </div>
-            </div>
+                <!-- 背景设置面板 -->
+                <div id="backgroundSettings" class="hidden mt-4 p-4 bg-gray-100 rounded-xl">
+                    <h3 class="font-bold mb-3">背景设置</h3>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="aspect-square rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 cursor-pointer hover:ring-2 hover:ring-indigo-500" onclick="setBackground('gradient')"></div>
+                        <div class="aspect-square rounded-lg bg-cover bg-center" style="background-image: url('https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=soft%20blue%20abstract%20background&image_size=landscape_16_9')" onclick="setBackground('https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=soft%20blue%20abstract%20background&image_size=landscape_16_9')"></div>
+                        <div class="aspect-square rounded-lg bg-cover bg-center" style="background-image: url('https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=warm%20orange%20sunset%20background&image_size=landscape_16_9')" onclick="setBackground('https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=warm%20orange%20sunset%20background&image_size=landscape_16_9')"></div>
+                        <div class="aspect-square rounded-lg bg-cover bg-center" style="background-image: url('https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20nature%20forest%20background&image_size=landscape_16_9')" onclick="setBackground('https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=green%20nature%20forest%20background&image_size=landscape_16_9')"></div>
+                        <div class="aspect-square rounded-lg bg-cover bg-center" style="background-image: url('https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=purple%20night%20sky%20background&image_size=landscape_16_9')" onclick="setBackground('https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=purple%20night%20sky%20background&image_size=landscape_16_9')"></div>
+                        <div class="aspect-square rounded-lg border-2 border-dashed border-gray-400 flex items-center justify-center cursor-pointer hover:border-indigo-500" onclick="uploadBackground()">
+                            <svg class="w-6 h-6 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
 
-            <!-- 标签筛选 -->
-            <div id="tagFilter" class="flex flex-wrap gap-2 mt-3"></div>
-        </header>
-
-        <!-- 新建笔记 -->
-        <div class="glass rounded-3xl p-6 mb-6 shadow-xl">
-            <input type="text" id="noteTitle" placeholder="标题（支持 #标签）..."
-                class="w-full text-xl font-bold bg-transparent border-b-2 border-gray-200 focus:border-indigo-500 focus:outline-none py-2 px-1 transition-colors placeholder-gray-400 mb-4">
-
-            <textarea id="noteContent" placeholder="写下你的想法..." rows="4"
-                class="w-full rounded-xl p-4 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all leading-relaxed"></textarea>
-
-            <div id="detectedTags" class="flex flex-wrap gap-1 mt-3 mb-4"></div>
-
-            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div class="flex gap-2">
-                    <div id="previewBtn" class="hidden md:flex">
-                        <button onclick="togglePreview()" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-sm">
-                            预览
+                    <!-- 图片插入 -->
+                    <div class="relative flex-shrink-0">
+                        <button onclick="document.getElementById('imageInput').click()" class="p-1.5 hover:bg-gray-200 rounded transition-colors" title="插入图片">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
                         </button>
                     </div>
-                    <button onclick="showTemplates()" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-sm">
-                        模板
-                    </button>
+                    <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
                 </div>
-                <div class="flex gap-2 w-full sm:w-auto">
-                    <button onclick="clearForm()" class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl border-2 border-gray-300 hover:bg-gray-50 font-medium transition-all">
-                        清空
-                    </button>
-                    <button onclick="addNote()" class="flex-1 sm:flex-none px-8 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all font-medium">
-                        保存
-                    </button>
+
+                <!-- 备份管理面板 -->
+                <div id="backupManager" class="hidden mt-4 p-4 bg-gray-100 rounded-xl">
+                    <h3 class="font-bold mb-3">备份管理</h3>
+                    
+                    <!-- 备份状态 -->
+                    <div class="mb-4 p-3 bg-white rounded-lg">
+                        <h4 class="font-medium mb-2">备份状态</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span>本地文件备份</span>
+                                <span id="backupStatus" class="text-sm">未设置</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>IndexedDB快照</span>
+                                <span id="snapshotStatus" class="text-sm">未创建</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>存储使用情况</span>
+                                <span id="storageStatus" class="text-sm">计算中...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 历史版本 -->
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="font-medium">历史版本</h4>
+                            <button onclick="loadSnapshots()" class="text-sm text-blue-600 hover:underline">刷新</button>
+                        </div>
+                        <div id="snapshotsList" class="bg-white rounded-lg p-3 max-h-48 overflow-y-auto">
+                            <p class="text-gray-500 text-sm">点击刷新查看历史版本</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 操作按钮 -->
+                    <div class="flex gap-2">
+                        <button onclick="setupLocalBackup()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            设置本地备份
+                        </button>
+                        <button onclick="createSnapshot()" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            创建快照
+                        </button>
+                        <button onclick="exportNotes()" class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                            导出备份
+                        </button>
+                    </div>
                 </div>
+
+                <!-- 搜索功能 -->
+                <div class="mt-4">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="搜索笔记或 #标签..."
+                            class="w-full pl-10 pr-4 py-3 rounded-xl border-2 focus:border-indigo-500 focus:outline-none transition-all">
+                        <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <!-- 排序选项 -->
+                    <div class="flex items-center justify-between mt-2">
+                        <label class="text-sm text-gray-500">排序：</label>
+                        <select id="sortOption" class="text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                            <option value="recent">最近修改优先</option>
+                            <option value="relevance">相关性优先</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 文件夹管理 -->
+                <div class="mt-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-bold">文件夹</h3>
+                        <!-- 新建下拉菜单 -->
+                        <div class="relative">
+                            <button id="newNoteBtn" class="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                新建
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="newNoteMenu" class="hidden absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 shadow-xl rounded-lg z-100 p-2 border border-gray-200 dark:border-gray-700">
+                                <div class="flex flex-col gap-2 p-2">
+                                    <button onclick="newBlankNote()" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors w-full">
+                                        <div class="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                        </div>
+                                        <span class="text-sm font-medium">空白文档</span>
+                                    </button>
+                                    <button onclick="addFolder()" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors w-full">
+                                        <div class="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                                            </svg>
+                                        </div>
+                                        <span class="text-sm font-medium">文件夹</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="foldersContainer" class="space-y-1"></div>
+                </div>
+
+                <!-- 标签筛选 -->
+                <div id="tagFilter" class="flex flex-wrap gap-2 mt-3"></div>
             </div>
 
-            <!-- 预览区域 -->
-            <div id="previewArea" class="hidden mt-4 p-4 bg-gray-50 rounded-xl max-h-64 overflow-y-auto"></div>
-
-            <!-- 模板选择 -->
-            <div id="templateArea" class="hidden mt-4">
-                <h3 class="font-bold mb-3">选择模板</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button onclick="useTemplate('password')" class="p-4 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors text-left">
-                        <div class="font-bold flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            <!-- 笔记列表 -->
+            <div class="glass rounded-3xl p-4 h-[calc(100vh-320px)] overflow-y-auto shadow-xl">
+                <!-- 空状态 -->
+                <div id="emptyState" class="hidden text-center py-16">
+                    <div class="empty-state inline-block">
+                        <div class="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center shadow-lg">
+                            <svg class="w-16 h-16 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
-                            密码记录
                         </div>
-                        <p class="text-sm opacity-70 mt-1">记录账户密码信息</p>
-                    </button>
-                    <button onclick="useTemplate('note')" class="p-4 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors text-left">
-                        <div class="font-bold flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                            </svg>
-                            普通笔记
-                        </div>
-                        <p class="text-sm opacity-70 mt-1">通用笔记模板</p>
-                    </button>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-3">还没有笔记</h3>
+                    <p class="text-sm opacity-70 mb-8 max-w-xs mx-auto">开始创建你的第一条笔记，记录生活中的美好瞬间和重要想法</p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button onclick="document.getElementById('noteTitle').focus()" class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all font-medium">
+                            创建笔记
+                        </button>
+                        <button onclick="addFolder()" class="px-8 py-3 border-2 border-indigo-500 text-indigo-600 rounded-xl hover:bg-indigo-50 transition-all font-medium">
+                            创建文件夹
+                        </button>
+                    </div>
+                    <div class="mt-12 opacity-60">
+                        <p class="text-xs">💡 提示：使用 #标签 可以为笔记添加标签</p>
+                        <p class="text-xs mt-1">📌 可以置顶重要笔记</p>
+                    </div>
                 </div>
+
+                <div id="notesContainer" class="space-y-3"></div>
             </div>
         </div>
 
-        <!-- 笔记列表 -->
-        <div id="notesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <!-- 右侧编辑区 -->
+        <div class="flex-1 flex flex-col min-h-0">
+            <!-- 新建笔记 -->
+            <div class="glass rounded-3xl p-4 mb-4 shadow-lg flex flex-col" style="box-shadow: 0 4px 20px rgba(0,0,0,0.08); min-height: 300px;">
+                <!-- 顶部操作栏 -->
+                <div class="flex items-center justify-between mb-3">
+                    <input type="text" id="noteTitle" placeholder="标题（支持 #标签）..."
+                        class="flex-1 text-xl font-bold bg-transparent border-b-2 border-gray-200 focus:border-indigo-500 focus:outline-none py-1 px-1 transition-colors" style="color: #333;" placeholder="标题（支持 #标签）...">
+                    <style>
+                        #noteTitle::placeholder {
+                            color: #4B5563;
+                        }
+                    </style>
 
-        <!-- 空状态 -->
-        <div id="emptyState" class="hidden text-center py-20">
-            <div class="empty-state inline-block">
-                <svg class="w-32 h-32 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
+                    <div class="flex items-center gap-2 ml-4">
+                        <!-- 导入按钮 -->
+                        <button onclick="document.getElementById('importInput').click()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="导入笔记">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </button>
+                        <input type="file" id="importInput" class="hidden" accept=".md,.txt,.html" multiple>
+                        
+                        <!-- 导出按钮 -->
+                        <button onclick="exportNotes()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="导出笔记">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                            </svg>
+                        </button>
+
+                        <!-- 标签切换：编辑/预览 -->
+                        <div class="flex bg-gray-100 rounded-lg p-1">
+                            <button onclick="setEditMode('edit')" id="editModeBtn" class="p-2 rounded-md bg-white shadow-sm transition-all" title="编辑">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                </svg>
+                            </button>
+                            <button onclick="setEditMode('preview')" id="previewModeBtn" class="p-2 rounded-md text-gray-500 hover:text-gray-700 transition-all" title="预览">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- 保存状态 -->
+                        <span id="saveStatus" class="text-xs text-gray-400 hidden">已保存</span>
+
+                        <!-- 操作按钮 -->
+                        <button onclick="clearForm()" class="p-1.5 hover:bg-gray-100 rounded-lg transition-colors" title="清空">
+                            <svg class="w-4 h-4 text-gray-500 hover:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                        <button onclick="addNote()" class="px-5 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all font-medium text-sm">
+                            保存
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 工具栏 -->
+                <div class="flex items-center gap-2 mb-3 p-2 bg-gray-100 rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
+                    <!-- 撤销/重做 -->
+                    <div class="flex items-center gap-2">
+                        <button onclick="undo()" class="p-2 hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="撤销">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                            </svg>
+                        </button>
+                        <button onclick="redo()" class="p-2 hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="重做">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="h-6 border-r border-gray-300 dark:border-gray-600 mx-2 flex-shrink-0"></div>
+
+                    <!-- 字体/字号 -->
+                    <div class="flex items-center gap-2">
+                        <select onchange="changeFont(this.value)" class="p-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs w-28 flex-shrink-0">
+                            <option value="Noto Sans SC">默认字体</option>
+                            <option value="JetBrains Mono">等宽字体</option>
+                            <option value="SimSun">宋体</option>
+                            <option value="SimHei">黑体</option>
+                            <option value="Microsoft YaHei">微软雅黑</option>
+                        </select>
+                        <select onchange="changeFontSize(this.value)" class="p-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs w-16 flex-shrink-0">
+                            <option value="12px">12</option>
+                            <option value="14px" selected>14</option>
+                            <option value="16px">16</option>
+                            <option value="18px">18</option>
+                            <option value="20px">20</option>
+                        </select>
+                    </div>
+
+                    <div class="h-6 border-r border-gray-300 dark:border-gray-600 mx-2 flex-shrink-0"></div>
+
+                    <!-- 粗体/斜体/下划线/删除线 -->
+                    <div class="flex items-center gap-2">
+                        <button onclick="formatText('**')" class="p-2 hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="加粗">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 4h8a4 4 0 014 4 4 4 0 01-4 4H6z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 12h9a4 4 0 014 4 4 4 0 01-4 4H6z"></path>
+                            </svg>
+                        </button>
+                        <button onclick="formatText('*')" class="p-2 hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="斜体">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 4h4m-2 0v16m-4 0h4"></path>
+                            </svg>
+                        </button>
+                        <button onclick="formatText('__')" class="p-2 hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="下划线">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                        </button>
+                        <button onclick="formatText('~~')" class="p-2 hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="删除线">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v6m0 4v2M4 12h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="h-6 border-r border-gray-300 dark:border-gray-600 mx-2 flex-shrink-0"></div>
+
+                    <!-- 文字颜色/文字高亮/插入图片 -->
+                    <div class="flex items-center gap-2">
+                        <div class="relative flex-shrink-0">
+                            <button onclick="toggleColorMenu()" class="p-2 hover:bg-gray-200 rounded transition-colors flex items-center gap-0.5" title="文字颜色">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+                                </svg>
+                            </button>
+                            <div id="colorMenu" class="hidden absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 shadow-lg rounded-lg z-10 p-2 grid grid-cols-4 gap-1">
+                                <div class="w-5 h-5 rounded cursor-pointer bg-black" onclick="changeTextColor('#000000')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-red-500" onclick="changeTextColor('#ef4444')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-blue-500" onclick="changeTextColor('#3b82f6')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-green-500" onclick="changeTextColor('#22c55e')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-yellow-500" onclick="changeTextColor('#eab308')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-purple-500" onclick="changeTextColor('#a855f7')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-pink-500" onclick="changeTextColor('#ec4899')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-gray-500" onclick="changeTextColor('#6b7280')"></div>
+                            </div>
+                        </div>
+                        <div class="relative flex-shrink-0">
+                            <button onclick="toggleHighlightMenu()" class="p-2 hover:bg-gray-200 rounded transition-colors" title="文字高亮">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                </svg>
+                            </button>
+                            <div id="highlightMenu" class="hidden absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 shadow-lg rounded-lg z-10 p-2 grid grid-cols-4 gap-1">
+                                <div class="w-5 h-5 rounded cursor-pointer bg-yellow-200" onclick="highlightText('#fef3c7')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-green-200" onclick="highlightText('#d1fae5')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-blue-200" onclick="highlightText('#dbeafe')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-purple-200" onclick="highlightText('#f3e8ff')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-pink-200" onclick="highlightText('#fce7f3')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-red-200" onclick="highlightText('#fee2e2')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-orange-200" onclick="highlightText('#ffedd5')"></div>
+                                <div class="w-5 h-5 rounded cursor-pointer bg-gray-200" onclick="highlightText('#f3f4f6')"></div>
+                            </div>
+                        </div>
+                        <div class="relative flex-shrink-0">
+                            <button onclick="document.getElementById('imageInput').click()" class="p-2 hover:bg-gray-200 rounded transition-colors" title="插入图片">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                </div>
+
+                <!-- 编辑/预览内容区 -->
+                <div class="flex-1 min-h-0 overflow-hidden flex flex-col">
+                    <!-- 编辑模式 - 使用contenteditable支持图片显示 -->
+                    <div id="noteContent" contenteditable="true" 
+                        class="flex-1 w-full rounded-xl p-4 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all leading-relaxed min-h-[100px] overflow-y-auto whitespace-pre-wrap break-words"
+                        data-placeholder="开始写下你的想法..." style="color: #333;"></div>
+
+                    <!-- 预览区域 -->
+                    <div id="previewArea" class="hidden flex-1 w-full rounded-xl p-4 resize-none focus:outline-none transition-all leading-relaxed min-h-[100px] overflow-y-auto whitespace-pre-wrap break-words" style="color: #333;"></div>
+                </div>
+
+                <div id="detectedTags" class="flex flex-wrap gap-1 mt-3"></div>
             </div>
-            <p class="text-lg opacity-50">还没有笔记，开始记录吧</p>
+        </div>
+    </div>
+
+    <!-- 右键菜单 -->
+    <div id="contextMenu" class="fixed hidden bg-white dark:bg-gray-800 shadow-lg rounded-lg z-50 min-w-[150px] border border-gray-200 dark:border-gray-700">
+        <div class="py-1">
+            <button onclick="pinNoteFromContext()" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
+                </svg>
+                <span>置顶</span>
+            </button>
+            <button onclick="moveNoteToFolderFromContext()" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                <span>移动到文件夹</span>
+            </button>
+            <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+            <button onclick="deleteNoteFromContext()" class="w-full text-left px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"></path>
+                </svg>
+                <span>删除</span>
+            </button>
         </div>
     </div>
 
     <script>
-        // 加密密钥（建议修改为你自己的密钥）
-        const ENCRYPTION_KEY = 'your-secret-key';
-        
-        // 简单加密函数
-        function encrypt(text, key) {
-            let result = '';
-            for (let i = 0; i < text.length; i++) {
-                result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+        // 加密相关函数
+        async function generateKey() {
+            try {
+                const key = await crypto.subtle.generateKey(
+                    {
+                        name: 'AES-GCM',
+                        length: 256
+                    },
+                    true,
+                    ['encrypt', 'decrypt']
+                );
+                const exportedKey = await crypto.subtle.exportKey('raw', key);
+                return btoa(String.fromCharCode(...new Uint8Array(exportedKey)));
+            } catch (e) {
+                console.error('生成密钥失败:', e);
+                throw e;
             }
-            return btoa(result);
         }
-        
-        // 简单解密函数
-        function decrypt(encryptedText, key) {
+
+        async function getKey() {
+            let keyStr = localStorage.getItem('encryptionKey');
+            if (!keyStr) {
+                keyStr = await generateKey();
+                localStorage.setItem('encryptionKey', keyStr);
+            }
+            const keyBytes = new Uint8Array([...atob(keyStr)].map(c => c.charCodeAt(0)));
+            return await crypto.subtle.importKey(
+                'raw',
+                keyBytes,
+                { name: 'AES-GCM' },
+                false,
+                ['encrypt', 'decrypt']
+            );
+        }
+
+        async function encryptData(data) {
+            const key = await getKey();
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encoder = new TextEncoder();
+            const encodedData = encoder.encode(JSON.stringify(data));
+            const encrypted = await crypto.subtle.encrypt(
+                {
+                    name: 'AES-GCM',
+                    iv: iv
+                },
+                key,
+                encodedData
+            );
+            const encryptedBytes = new Uint8Array(encrypted);
+            const combined = new Uint8Array(iv.length + encryptedBytes.length);
+            combined.set(iv, 0);
+            combined.set(encryptedBytes, iv.length);
+            return btoa(String.fromCharCode(...combined));
+        }
+
+        async function decryptData(encryptedData) {
+            const key = await getKey();
+            const combined = new Uint8Array([...atob(encryptedData)].map(c => c.charCodeAt(0)));
+            const iv = combined.slice(0, 12);
+            const encryptedBytes = combined.slice(12);
+            const decrypted = await crypto.subtle.decrypt(
+                {
+                    name: 'AES-GCM',
+                    iv: iv
+                },
+                key,
+                encryptedBytes
+            );
+            const decoder = new TextDecoder();
+            return JSON.parse(decoder.decode(decrypted));
+        }
+
+        // 简单解密函数（用于数据迁移）
+        function oldDecrypt(encryptedText, key) {
             let text = atob(encryptedText);
             let result = '';
             for (let i = 0; i < text.length; i++) {
@@ -251,43 +621,708 @@
             }
             return result;
         }
-        
-        // 加载笔记（带解密）
-        function loadNotes() {
+
+        // 加载笔记
+        async function loadNotes() {
+            // 尝试从加密存储读取
             const encryptedNotes = localStorage.getItem('encryptedNotes');
             if (encryptedNotes) {
                 try {
-                    const decrypted = decrypt(encryptedNotes, ENCRYPTION_KEY);
-                    return JSON.parse(decrypted);
+                    const loadedNotes = await decryptData(encryptedNotes);
+                    // 数据验证和修复：确保每条笔记都有必需字段，且id为字符串类型
+                    const validatedNotes = loadedNotes.map(note => ({
+                        id: String(note.id || Date.now().toString()),
+                        title: note.title || '无标题',
+                        content: note.content || '',
+                        timestamp: note.timestamp || new Date().toISOString(),
+                        pinned: note.pinned || false,
+                        starred: note.starred || false,
+                        folder: note.folder || 'default',
+                        tags: note.tags || []
+                    }));
+                    // 评估存储情况
+                    setTimeout(assessStorage, 1000);
+                    return validatedNotes;
                 } catch (e) {
                     console.error('解密失败:', e);
                     return [];
                 }
             }
+            
+            // 尝试从旧的加密存储迁移数据
+            const oldEncryptedNotes = localStorage.getItem('oldEncryptedNotes');
+            if (oldEncryptedNotes) {
+                try {
+                    const oldKey = 'your-secret-key';
+                    const decrypted = oldDecrypt(oldEncryptedNotes, oldKey);
+                    const oldNotes = JSON.parse(decrypted);
+                    // 迁移到新的加密存储
+                    await saveNotes(oldNotes);
+                    // 清理旧数据
+                    localStorage.removeItem('oldEncryptedNotes');
+                    // 评估存储情况
+                    setTimeout(assessStorage, 1000);
+                    return oldNotes;
+                } catch (e) {
+                    console.error('迁移失败:', e);
+                    return [];
+                }
+            }
+            
+            // 尝试从非加密存储迁移数据
+            const unencryptedNotes = localStorage.getItem('notes');
+            if (unencryptedNotes) {
+                try {
+                    const oldNotes = JSON.parse(unencryptedNotes);
+                    // 迁移到新的加密存储
+                    await saveNotes(oldNotes);
+                    // 清理旧数据
+                    localStorage.removeItem('notes');
+                    // 评估存储情况
+                    setTimeout(assessStorage, 1000);
+                    return oldNotes;
+                } catch (e) {
+                    console.error('迁移失败:', e);
+                    return [];
+                }
+            }
+            
             return [];
         }
+
+        // 快照相关变量
+        let saveCount = 0;
+        let lastSnapshotTime = 0;
+        const MAX_COMPLETE_SNAPSHOTS = 3;
+        const MAX_SNAPSHOTS = 10;
         
-        let notes = loadNotes();
+        // 初始化IndexedDB
+        function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('NoteAppSnapshots', 2);
+                
+                request.onerror = () => reject('IndexedDB初始化失败');
+                
+                request.onsuccess = () => resolve(request.result);
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('snapshots')) {
+                        db.createObjectStore('snapshots', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('images')) {
+                        const imageStore = db.createObjectStore('images', { keyPath: 'id', autoIncrement: true });
+                        imageStore.createIndex('noteId', 'noteId', { unique: false });
+                    }
+                };
+            });
+        }
+        
+        // 创建快照
+        async function createSnapshot() {
+            try {
+                const db = await initIndexedDB();
+                const transaction = db.transaction('snapshots', 'readwrite');
+                const store = transaction.objectStore('snapshots');
+                
+                // 获取当前笔记数据
+                const snapshotData = {
+                    timestamp: new Date().toISOString(),
+                    notes: notes,
+                    folders: folders,
+                    version: 1,
+                    type: 'complete' // 完整快照
+                };
+                
+                // 添加新快照
+                await store.add(snapshotData);
+                
+                // 获取所有快照
+                const snapshots = await store.getAll();
+                
+                // 按时间排序（最新的在前）
+                snapshots.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                // 只保留最近3个完整快照，更早的转换为元数据快照
+                if (snapshots.length > MAX_COMPLETE_SNAPSHOTS) {
+                    for (let i = MAX_COMPLETE_SNAPSHOTS; i < snapshots.length; i++) {
+                        const snapshot = snapshots[i];
+                        if (snapshot.type === 'complete') {
+                            // 转换为元数据快照
+                            const metadataSnapshot = {
+                                id: snapshot.id,
+                                timestamp: snapshot.timestamp,
+                                noteCount: snapshot.notes.length,
+                                folderCount: snapshot.folders.length,
+                                version: 1,
+                                type: 'metadata' // 元数据快照
+                            };
+                            await store.put(metadataSnapshot);
+                        }
+                    }
+                }
+                
+                // 如果快照数量超过最大值，删除最旧的
+                if (snapshots.length > MAX_SNAPSHOTS) {
+                    snapshots.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                    const toDelete = snapshots.slice(0, snapshots.length - MAX_SNAPSHOTS);
+                    
+                    for (const snapshot of toDelete) {
+                        await store.delete(snapshot.id);
+                    }
+                }
+                
+                console.log('快照创建成功');
+            } catch (error) {
+                console.error('创建快照失败:', error);
+            }
+        }
+        
+        // 检查是否需要创建快照
+        function checkSnapshotNeeded() {
+            const now = Date.now();
+            const fiveMinutes = 5 * 60 * 1000;
+            
+            // 每5分钟或每10次保存后创建快照
+            if (now - lastSnapshotTime > fiveMinutes || saveCount >= 10) {
+                createSnapshot();
+                lastSnapshotTime = now;
+                saveCount = 0;
+            }
+        }
+
+        // 本地文件备份相关变量
+        let lastBackupDate = localStorage.getItem('lastBackupDate') || new Date(0).toDateString();
+        let backupFrequency = localStorage.getItem('backupFrequency') || 'manual'; // manual, daily, weekly, monthly
+        
+        // 初始化本地文件备份
+        async function initLocalBackup() {
+            try {
+                // 加载备份频率设置
+                const savedFrequency = localStorage.getItem('backupFrequency');
+                if (savedFrequency) {
+                    backupFrequency = savedFrequency;
+                }
+                
+                // 检查是否需要设置备份
+                if (!localStorage.getItem('backupFrequency')) {
+                    await setupLocalBackup();
+                }
+            } catch (error) {
+                console.error('初始化本地备份失败:', error);
+            }
+        }
+        
+        // 设置本地备份
+        async function setupLocalBackup() {
+            try {
+                // 询问用户是否设置自动备份
+                const backupEnabled = confirm('是否设置本地文件自动备份？\n\n备份可以防止数据丢失，建议启用。');
+                
+                if (backupEnabled) {
+                    // 选择备份频率
+                    const frequency = prompt('请选择备份频率：\n1. 手动（需要时手动触发）\n2. 每天\n3. 每周\n4. 每月\n\n请输入数字 1-4', '1');
+                    
+                    switch (frequency) {
+                        case '2':
+                            backupFrequency = 'daily';
+                            break;
+                        case '3':
+                            backupFrequency = 'weekly';
+                            break;
+                        case '4':
+                            backupFrequency = 'monthly';
+                            break;
+                        default:
+                            backupFrequency = 'manual';
+                    }
+                    
+                    localStorage.setItem('backupFrequency', backupFrequency); // 存储备份频率
+                    await performLocalBackup();
+                }
+            } catch (error) {
+                console.error('设置本地备份失败:', error);
+            }
+        }
+        
+        // 执行本地备份
+        async function performLocalBackup() {
+            try {
+                // 准备备份数据
+                const backupData = {
+                    notes: notes,
+                    folders: folders,
+                    timestamp: new Date().toISOString(),
+                    version: '1.0'
+                };
+                
+                // 生成带时间戳的文件名
+                const now = new Date();
+                const timestamp = now.toISOString().replace(/[:.]/g, '-');
+                const fileName = `拾光备份_${timestamp}.json`;
+                
+                // 创建Blob并下载
+                const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // 更新最后备份日期
+                lastBackupDate = now.toDateString();
+                localStorage.setItem('lastBackupDate', lastBackupDate);
+                console.log('本地备份成功');
+            } catch (error) {
+                console.error('执行本地备份失败:', error);
+            }
+        }
+        
+        // 检查是否需要执行本地备份
+        function checkLocalBackupNeeded() {
+            if (backupFrequency === 'manual') {
+                return;
+            }
+            
+            const now = new Date();
+            const lastBackup = new Date(lastBackupDate);
+            
+            switch (backupFrequency) {
+                case 'daily':
+                    // 每天备份
+                    if (now.toDateString() !== lastBackup.toDateString()) {
+                        performLocalBackup();
+                    }
+                    break;
+                case 'weekly':
+                    // 每周备份
+                    const weekDiff = Math.floor((now - lastBackup) / (7 * 24 * 60 * 60 * 1000));
+                    if (weekDiff >= 1) {
+                        performLocalBackup();
+                    }
+                    break;
+                case 'monthly':
+                    // 每月备份
+                    const monthDiff = (now.getFullYear() - lastBackup.getFullYear()) * 12 + 
+                                     (now.getMonth() - lastBackup.getMonth());
+                    if (monthDiff >= 1) {
+                        performLocalBackup();
+                    }
+                    break;
+            }
+        }
+
+        // 存储迁移评估
+        async function assessStorage() {
+            try {
+                // 计算localStorage使用情况
+                const localStorageSize = calculateLocalStorageSize();
+                console.log(`localStorage使用情况: ${(localStorageSize / 1024 / 1024).toFixed(2)} MB`);
+                
+                // 检查是否有大量图片
+                const imageDataSize = calculateImageDataSize();
+                console.log(`图片数据大小: ${(imageDataSize / 1024 / 1024).toFixed(2)} MB`);
+                
+                // 评估是否需要迁移
+                if (localStorageSize > 4 * 1024 * 1024) { // 超过4MB
+                    console.log('localStorage容量接近上限，建议迁移图片数据');
+                    if (imageDataSize > 1 * 1024 * 1024) { // 图片超过1MB
+                        await suggestImageMigration();
+                    }
+                }
+            } catch (error) {
+                console.error('存储评估失败:', error);
+            }
+        }
+        
+        // 计算localStorage使用情况
+        function calculateLocalStorageSize() {
+            let totalSize = 0;
+            for (const key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    totalSize += key.length + localStorage[key].length;
+                }
+            }
+            return totalSize;
+        }
+        
+        // 计算图片数据大小
+        function calculateImageDataSize() {
+            let totalSize = 0;
+            notes.forEach(note => {
+                // 查找Base64图片数据
+                const base64Images = note.content.match(/data:image\/[^;]+;base64,[^"']+/g) || [];
+                base64Images.forEach(image => {
+                    // Base64编码的图片大小大约是原始大小的1.37倍
+                    totalSize += image.length * 0.73;
+                });
+            });
+            return totalSize;
+        }
+        
+        // 建议图片迁移
+        async function suggestImageMigration() {
+            if (confirm('检测到您的笔记中包含大量图片数据，可能会占用较多localStorage空间。\n\n是否将图片数据迁移到IndexedDB存储以节省空间？')) {
+                await migrateImagesToIndexedDB();
+            }
+        }
+        
+        // 将图片迁移到IndexedDB
+        async function migrateImagesToIndexedDB() {
+            try {
+                const db = await initIndexedDB();
+                const transaction = db.transaction('snapshots', 'readwrite');
+                
+                // 为图片创建存储
+                if (!db.objectStoreNames.contains('images')) {
+                    const imageStore = db.createObjectStore('images', { keyPath: 'id', autoIncrement: true });
+                    imageStore.createIndex('noteId', 'noteId', { unique: false });
+                }
+                
+                const imageStore = transaction.objectStore('images');
+                
+                // 处理每个笔记
+                for (const note of notes) {
+                    let updatedContent = note.content;
+                    const base64Images = note.content.match(/data:image\/[^;]+;base64,[^"']+/g) || [];
+                    
+                    for (const imageData of base64Images) {
+                        // 生成唯一ID
+                        const imageId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                        
+                        // 存储图片到IndexedDB
+                        await imageStore.add({
+                            id: imageId,
+                            noteId: note.id,
+                            data: imageData,
+                            timestamp: new Date().toISOString()
+                        });
+                        
+                        // 替换笔记中的图片数据为引用
+                        updatedContent = updatedContent.replace(imageData, `[image:${imageId}]`);
+                    }
+                    
+                    if (updatedContent !== note.content) {
+                        note.content = updatedContent;
+                    }
+                }
+                
+                // 保存更新后的笔记
+                await saveNotes();
+                console.log('图片迁移成功');
+            } catch (error) {
+                console.error('图片迁移失败:', error);
+            }
+        }
+        
+        // 从IndexedDB加载图片
+        async function loadImagesForNote(note) {
+            try {
+                const db = await initIndexedDB();
+                const transaction = db.transaction('images', 'readonly');
+                const imageStore = transaction.objectStore('images');
+                
+                let content = note.content;
+                
+                // 查找所有图片引用
+                const imageMatches = content.match(/\[image:(.+?)\]/g) || [];
+                for (const match of imageMatches) {
+                    const imageId = match.match(/\[image:(.+?)\]/)[1];
+                    try {
+                        const image = await imageStore.get(imageId);
+                        if (image) {
+                            content = content.replace(match, image.data);
+                        }
+                        // 如果没有找到图片，保持原文不变
+                    } catch (imageError) {
+                        console.error(`加载图片 ${imageId} 失败:`, imageError);
+                        // 加载失败时保持原文不变
+                    }
+                }
+                
+                return content;
+            } catch (error) {
+                console.error('加载图片失败:', error);
+                return note.content; // 整体失败时返回原文
+            }
+        }
+
+        // 切换备份管理面板
+        function toggleBackupManager() {
+            const backupManager = document.getElementById('backupManager');
+            const backgroundSettings = document.getElementById('backgroundSettings');
+            
+            // 关闭背景设置面板
+            backgroundSettings.classList.add('hidden');
+            
+            // 切换备份管理面板
+            backupManager.classList.toggle('hidden');
+            
+            // 如果打开了备份管理面板，更新状态
+            if (!backupManager.classList.contains('hidden')) {
+                updateBackupStatus();
+            }
+        }
+        
+        // 更新备份状态
+        async function updateBackupStatus() {
+            try {
+                // 更新本地备份状态
+                const backupStatus = document.getElementById('backupStatus');
+                if (localStorage.getItem('backupFrequency')) {
+                    const frequency = localStorage.getItem('backupFrequency');
+                    const frequencyText = {
+                        'manual': '手动',
+                        'daily': '每天',
+                        'weekly': '每周',
+                        'monthly': '每月'
+                    }[frequency] || '手动';
+                    backupStatus.textContent = `已设置 (${frequencyText})`;
+                    backupStatus.className = 'text-sm text-green-600';
+                } else {
+                    backupStatus.textContent = '未设置';
+                    backupStatus.className = 'text-sm text-gray-500';
+                }
+                
+                // 更新快照状态
+                const snapshotStatus = document.getElementById('snapshotStatus');
+                const db = await initIndexedDB();
+                const transaction = db.transaction('snapshots', 'readonly');
+                const store = transaction.objectStore('snapshots');
+                const snapshots = await store.getAll();
+                if (snapshots.length > 0) {
+                    const completeSnapshots = snapshots.filter(s => s.type === 'complete').length;
+                    snapshotStatus.textContent = `已创建 ${snapshots.length} 个 (完整: ${completeSnapshots})`;
+                    snapshotStatus.className = 'text-sm text-green-600';
+                } else {
+                    snapshotStatus.textContent = '未创建';
+                    snapshotStatus.className = 'text-sm text-gray-500';
+                }
+                
+                // 更新存储使用情况
+                const storageStatus = document.getElementById('storageStatus');
+                const localStorageSize = calculateLocalStorageSize();
+                storageStatus.textContent = `${(localStorageSize / 1024 / 1024).toFixed(2)} MB / 5 MB`;
+                storageStatus.className = 'text-sm';
+                if (localStorageSize > 4 * 1024 * 1024) {
+                    storageStatus.className = 'text-sm text-yellow-600';
+                }
+            } catch (error) {
+                console.error('更新备份状态失败:', error);
+            }
+        }
+        
+        // 加载快照列表
+        async function loadSnapshots() {
+            try {
+                const db = await initIndexedDB();
+                const transaction = db.transaction('snapshots', 'readonly');
+                const store = transaction.objectStore('snapshots');
+                const snapshots = await store.getAll();
+                
+                const snapshotsList = document.getElementById('snapshotsList');
+                
+                if (snapshots.length === 0) {
+                    snapshotsList.innerHTML = '<p class="text-gray-500 text-sm">没有历史版本</p>';
+                    return;
+                }
+                
+                // 按时间倒序排序
+                snapshots.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                snapshotsList.innerHTML = snapshots.map(snapshot => {
+                    const date = new Date(snapshot.timestamp);
+                    const dateStr = date.toLocaleString('zh-CN');
+                    
+                    if (snapshot.type === 'metadata') {
+                        return `
+                            <div class="p-2 border-b border-gray-100 last:border-0 hover:bg-gray-50 opacity-70">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm">${dateStr}</span>
+                                    <span class="text-xs text-gray-500">元数据</span>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    ${snapshot.noteCount} 条笔记 · ${snapshot.folderCount} 个文件夹
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="p-2 border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm">${dateStr}</span>
+                                    <button onclick="restoreSnapshot('${snapshot.id}')" class="text-xs text-blue-600 hover:underline">恢复</button>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    ${snapshot.notes.length} 条笔记 · ${snapshot.folders.length} 个文件夹
+                                </div>
+                            </div>
+                        `;
+                    }
+                }).join('');
+            } catch (error) {
+                console.error('加载快照失败:', error);
+                document.getElementById('snapshotsList').innerHTML = '<p class="text-gray-500 text-sm">加载失败</p>';
+            }
+        }
+        
+        // 恢复快照
+        async function restoreSnapshot(id) {
+            if (!confirm('确定要恢复这个历史版本吗？这将覆盖当前的所有笔记和文件夹。')) {
+                return;
+            }
+            
+            try {
+                const db = await initIndexedDB();
+                const transaction = db.transaction('snapshots', 'readonly');
+                const store = transaction.objectStore('snapshots');
+                const snapshot = await store.get(id);
+                
+                if (snapshot) {
+                    // 恢复笔记和文件夹
+                    notes = snapshot.notes;
+                    folders = snapshot.folders;
+                    
+                    // 保存恢复后的数据
+                    await saveNotes();
+                    
+                    // 更新UI
+                    renderNotes();
+                    renderFolders();
+                    renderTagFilter();
+                    
+                    alert('恢复成功');
+                }
+            } catch (error) {
+                console.error('恢复快照失败:', error);
+                alert('恢复失败');
+            }
+        }
+
+        // 保存笔记
+        async function saveNotes(notesData) {
+            const saveStatus = document.getElementById('saveStatus');
+            if (saveStatus) {
+                saveStatus.textContent = '保存中...';
+                saveStatus.classList.remove('hidden', 'text-green-500', 'text-yellow-500', 'text-red-500');
+                saveStatus.classList.add('text-yellow-500');
+            }
+            
+            try {
+                const data = notesData || notes;
+                const encrypted = await encryptData(data);
+                localStorage.setItem('encryptedNotes', encrypted);
+                
+                if (saveStatus) {
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                    saveStatus.textContent = `已保存 ${timeStr}`;
+                    saveStatus.classList.remove('text-yellow-500');
+                    saveStatus.classList.add('text-green-500');
+                }
+                
+                // 增加保存计数并检查是否需要创建快照
+                saveCount++;
+                checkSnapshotNeeded();
+                
+                // 检查是否需要执行本地备份
+                checkLocalBackupNeeded();
+            } catch (error) {
+                if (saveStatus) {
+                    saveStatus.textContent = '保存失败';
+                    saveStatus.classList.remove('text-yellow-500');
+                    saveStatus.classList.add('text-red-500');
+                }
+                console.error('保存失败:', error);
+            }
+        }
+
+        // 自动保存功能
+        let autoSaveTimer;
+        let hasUnsavedChanges = false;
+        
+        function setupAutoSave() {
+            const noteContent = document.getElementById('noteContent');
+            const noteTitle = document.getElementById('noteTitle');
+            
+            function scheduleAutoSave() {
+                clearTimeout(autoSaveTimer);
+                hasUnsavedChanges = true;
+                autoSaveTimer = setTimeout(async () => {
+                    const title = noteTitle.value.trim();
+                    const content = await getEditorHTML();
+                    
+                    if (title || content) {
+                        await autoSaveNote(title, content);
+                        hasUnsavedChanges = false;
+                    }
+                }, 1000); // 1秒后自动保存（节流）
+            }
+            
+            if (noteContent) {
+                noteContent.addEventListener('input', scheduleAutoSave);
+            }
+            if (noteTitle) {
+                noteTitle.addEventListener('input', scheduleAutoSave);
+            }
+            
+            // 添加beforeunload事件
+            window.addEventListener('beforeunload', function(e) {
+                if (hasUnsavedChanges) {
+                    const confirmationMessage = '您有未保存的更改，确定要离开吗？';
+                    e.returnValue = confirmationMessage;
+                    return confirmationMessage;
+                }
+            });
+        }
+        
+        // 自动保存笔记
+        async function autoSaveNote(title, content) {
+            try {
+                if (editingId) {
+                    // 编辑现有笔记 - 自动保存不更新时间戳，避免位置变化
+                    const note = notes.find(n => String(n.id) === String(editingId));
+                    if (note) {
+                        note.title = title;
+                        note.content = content;
+                        // 不更新timestamp，保持笔记位置不变
+                        await saveNotes();
+                    }
+                } else {
+                    // 新建笔记
+                    if (title || content) {
+                        const newNote = {
+                            id: Date.now().toString(),
+                            title: title,
+                            content: content,
+                            timestamp: new Date().toISOString(),
+                            folder: currentFolder,
+                            tags: [],
+                            pinned: false,
+                            starred: false
+                        };
+                        notes.unshift(newNote);
+                        await saveNotes();
+                        editingId = newNote.id;
+                    }
+                }
+            } catch (error) {
+                console.error('自动保存失败:', error);
+            }
+        }
+        
+        let notes = [];
+        let folders = JSON.parse(localStorage.getItem('folders')) || [{ id: 'default', name: '默认文件夹' }];
+        let currentFolder = 'default';
         let editingId = null;
         let selectedTags = new Set();
         let isDark = localStorage.getItem('darkMode') === 'true';
         let showPreview = false;
-        let syncCode = localStorage.getItem('syncCode') || generateSyncCode();
 
-        function init() {
-            if (isDark) document.body.classList.add('dark');
-            updateStats();
-            renderNotes();
-            renderTagFilter();
 
-            document.getElementById('searchInput').addEventListener('input', (e) => renderNotes(e.target.value));
-            document.getElementById('noteTitle').addEventListener('input', detectTags);
-            document.getElementById('noteContent').addEventListener('input', detectTags);
-
-            document.addEventListener('keydown', (e) => {
-                if (e.ctrlKey && e.key === 'Enter') addNote();
-            });
-        }
 
         function toggleTheme() {
             isDark = !isDark;
@@ -295,9 +1330,27 @@
             localStorage.setItem('darkMode', isDark);
         }
 
+        function toggleSearch() {
+            const container = document.getElementById('searchContainer');
+            const btnText = document.getElementById('searchBtnText');
+            
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                btnText.textContent = '关闭搜索';
+                setTimeout(() => {
+                    document.getElementById('searchInput').focus();
+                }, 100);
+            } else {
+                container.classList.add('hidden');
+                btnText.textContent = '搜索';
+                document.getElementById('searchInput').value = '';
+                renderNotes();
+            }
+        }
+
         function detectTags() {
             const title = document.getElementById('noteTitle').value;
-            const content = document.getElementById('noteContent').value;
+            const content = getEditorText();
             const text = title + ' ' + content;
             const tagRegex = /#(\w+)/g;
             const tags = new Set();
@@ -307,7 +1360,7 @@
                 tags.add(match[1]);
             }
 
-            document.getElementById('detectedTags').innerHTML = Array.from(tags).map(t => `<span class="tag">#${t}</span>`).join('');
+            document.getElementById('detectedTags').innerHTML = Array.from(tags).map(t => `<span class="tag bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-medium">#${t}</span>`).join('');
         }
 
         function getAllTags() {
@@ -322,6 +1375,25 @@
             return tags;
         }
 
+        // 为标签生成颜色
+        function getTagColor(tag) {
+            const colors = [
+                'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+                'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+                'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
+                'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+                'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+                'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300'
+            ];
+            let hash = 0;
+            for (let i = 0; i < tag.length; i++) {
+                hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return colors[Math.abs(hash) % colors.length];
+        }
+
         function renderTagFilter() {
             const tags = getAllTags();
             const container = document.getElementById('tagFilter');
@@ -331,9 +1403,10 @@
                 return;
             }
 
-            container.innerHTML = Array.from(tags).map(tag =>
-                `<span class="tag ${selectedTags.has(tag) ? '' : 'inactive'}" onclick="toggleTag('${tag}')">#${tag}</span>`
-            ).join('');
+            container.innerHTML = Array.from(tags).map(tag => {
+                const colorClass = getTagColor(tag);
+                return `<span class="tag ${colorClass} ${selectedTags.has(tag) ? 'ring-2 ring-offset-1 ring-current' : 'opacity-70 hover:opacity-100'}" onclick="toggleTag('${tag}')">#${tag}</span>`;
+            }).join('');
         }
 
         function toggleTag(tag) {
@@ -346,113 +1419,921 @@
             renderNotes(document.getElementById('searchInput').value);
         }
 
-        function togglePreview() {
-            showPreview = !showPreview;
-            const area = document.getElementById('previewArea');
-            const btn = document.querySelector('#previewBtn button');
+        // 文件夹相关函数
+        function saveFolders() {
+            localStorage.setItem('folders', JSON.stringify(folders));
+        }
 
-            if (showPreview) {
-                area.classList.remove('hidden');
-                btn.textContent = '关闭预览';
+        function renderFolders() {
+            const container = document.getElementById('foldersContainer');
+            container.innerHTML = folders.map(folder => `
+                <div class="flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${currentFolder === folder.id ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}" onclick="switchFolder('${folder.id}')">
+                    <span class="flex-1">${escapeHtml(folder.name)}</span>
+                    ${folder.id !== 'default' ? `
+                        <div class="flex gap-1 opacity-0 ${currentFolder === folder.id ? 'opacity-100' : ''} hover:opacity-100 transition-opacity">
+                            <button onclick="event.stopPropagation(); editFolder('${folder.id}')" class="p-1 hover:bg-gray-200 rounded transition-colors" title="编辑">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                </svg>
+                            </button>
+                            <button onclick="event.stopPropagation(); deleteFolder('${folder.id}')" class="p-1 hover:bg-red-100 rounded transition-colors" title="删除">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function switchFolder(folderId) {
+            currentFolder = folderId;
+            renderFolders();
+            renderNotes(document.getElementById('searchInput').value);
+        }
+
+        function addFolder() {
+            const name = prompt('请输入文件夹名称：');
+            if (name && name.trim()) {
+                const newFolder = {
+                    id: Date.now().toString(),
+                    name: name.trim()
+                };
+                folders.push(newFolder);
+                saveFolders();
+                renderFolders();
+            }
+        }
+
+        function editFolder(folderId) {
+            const folder = folders.find(f => f.id === folderId);
+            if (folder) {
+                const name = prompt('请输入新的文件夹名称：', folder.name);
+                if (name && name.trim()) {
+                    folder.name = name.trim();
+                    saveFolders();
+                    renderFolders();
+                }
+            }
+        }
+
+        function deleteFolder(folderId) {
+            if (folderId === 'default') {
+                alert('默认文件夹不能删除');
+                return;
+            }
+
+            if (confirm('确定要删除这个文件夹吗？文件夹中的笔记将被移动到默认文件夹。')) {
+                // 将该文件夹中的笔记移动到默认文件夹
+                notes.forEach(note => {
+                    if (note.folder === folderId) {
+                        note.folder = 'default';
+                    }
+                });
+
+                // 删除文件夹
+                folders = folders.filter(f => f.id !== folderId);
+                
+                // 如果当前文件夹被删除，切换到默认文件夹
+                if (currentFolder === folderId) {
+                    currentFolder = 'default';
+                }
+
+                saveFolders();
+                saveNotes();
+                renderFolders();
+                renderNotes(document.getElementById('searchInput').value);
+            }
+        }
+
+        // 右键菜单相关
+        let contextNoteId = null;
+
+        function showContextMenu(event, noteId) {
+            contextNoteId = noteId;
+            const menu = document.getElementById('contextMenu');
+            menu.style.left = `${event.pageX}px`;
+            menu.style.top = `${event.pageY}px`;
+            menu.classList.remove('hidden');
+        }
+
+        function hideContextMenu() {
+            document.getElementById('contextMenu').classList.add('hidden');
+        }
+
+        // 点击页面其他地方关闭右键菜单
+        document.addEventListener('click', hideContextMenu);
+
+        // 从右键菜单执行操作
+        function pinNoteFromContext() {
+            if (contextNoteId) {
+                pinNote(contextNoteId);
+                hideContextMenu();
+            }
+        }
+
+        function moveNoteToFolderFromContext() {
+            if (contextNoteId) {
+                moveNoteToFolder(contextNoteId);
+                hideContextMenu();
+            }
+        }
+
+        function deleteNoteFromContext() {
+            if (contextNoteId) {
+                deleteNote(contextNoteId);
+                hideContextMenu();
+            }
+        }
+
+        // 移动笔记到文件夹
+        function moveNoteToFolder(noteId) {
+            const note = notes.find(n => String(n.id) === String(noteId));
+            if (!note) return;
+
+            // 创建模态对话框
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
+                    <h3 class="font-bold text-lg mb-4">移动到文件夹</h3>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">选择目标文件夹</label>
+                        <select id="folderSelect" class="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            ${folders.map(folder => `<option value="${folder.id}" ${note.folder === folder.id ? 'selected' : ''}>${folder.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button id="cancelBtn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">取消</button>
+                        <button id="confirmBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">确定</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // 绑定事件
+            document.getElementById('cancelBtn').addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+            
+            document.getElementById('confirmBtn').addEventListener('click', () => {
+                const selectedFolderId = document.getElementById('folderSelect').value;
+                if (selectedFolderId) {
+                    note.folder = selectedFolderId;
+                    saveNotes();
+                    renderNotes();
+                }
+                document.body.removeChild(modal);
+            });
+        }
+
+        // 编辑/预览模式切换
+        let isPreviewMode = false;
+
+        function setEditMode(mode) {
+            const editBtn = document.getElementById('editModeBtn');
+            const previewBtn = document.getElementById('previewModeBtn');
+            const editor = document.getElementById('noteContent');
+            const previewArea = document.getElementById('previewArea');
+
+            if (mode === 'preview') {
+                isPreviewMode = true;
+                editBtn.classList.remove('bg-white', 'shadow-sm');
+                editBtn.classList.add('text-gray-500');
+                previewBtn.classList.remove('text-gray-500');
+                previewBtn.classList.add('bg-white', 'shadow-sm');
+                editor.classList.add('hidden');
+                previewArea.classList.remove('hidden');
                 updatePreview();
             } else {
-                area.classList.add('hidden');
-                btn.textContent = '预览';
-            }
-        }
-
-        function showTemplates() {
-            const area = document.getElementById('templateArea');
-            const previewArea = document.getElementById('previewArea');
-            
-            if (area.classList.contains('hidden')) {
-                area.classList.remove('hidden');
+                isPreviewMode = false;
+                previewBtn.classList.remove('bg-white', 'shadow-sm');
+                previewBtn.classList.add('text-gray-500');
+                editBtn.classList.remove('text-gray-500');
+                editBtn.classList.add('bg-white', 'shadow-sm');
                 previewArea.classList.add('hidden');
-                showPreview = false;
-                document.querySelector('#previewBtn button').textContent = '预览';
-            } else {
-                area.classList.add('hidden');
+                editor.classList.remove('hidden');
             }
         }
 
-        function useTemplate(type) {
-            const templates = {
-                password: {
-                    title: '密码记录 #密码',
-                    content: `# 服务名称
 
-- 用户名: 
-- 密码提示: 
-- 安全问题: 
-- 备注: 
-- 上次更新: ${new Date().toLocaleDateString('zh-CN')}
-`
-                },
-                note: {
-                    title: '笔记',
-                    content: `# 标题
-
-## 内容
-
-`
-                }
-            };
-
-            const template = templates[type];
-            if (template) {
-                document.getElementById('noteTitle').value = template.title;
-                document.getElementById('noteContent').value = template.content;
-                detectTags();
-                document.getElementById('templateArea').classList.add('hidden');
-                document.getElementById('noteTitle').focus();
-            }
-        }
 
         function updatePreview() {
-            const content = document.getElementById('noteContent').value;
-            let html = content
-                .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
-                .replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold mt-3 mb-2">$1</h2>')
-                .replace(/^### (.+)$/gm, '<h3 class="text-base font-bold mt-2 mb-1">$1</h3>')
-                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                .replace(/`([^`]+)`/g, '<code class="bg-gray-200 px-1 rounded">$1</code>')
-                .replace(/^- (.+)$/gm, '<li class="ml-4">$1</li>')
-                .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-indigo-500 pl-4 italic my-2">$1</blockquote>')
-                .replace(/\n/g, '<br>');
-
-            document.getElementById('previewArea').innerHTML = html;
+            const content = getEditorHTML();
+            document.getElementById('previewArea').innerHTML = content;
         }
 
-        function addNote() {
+        function formatText(mark) {
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+
+            const range = selection.getRangeAt(0);
+            const selectedText = range.toString();
+
+            if (selectedText) {
+                const wrapper = document.createElement('span');
+                if (mark === '**') {
+                    wrapper.style.fontWeight = 'bold';
+                } else if (mark === '*') {
+                    wrapper.style.fontStyle = 'italic';
+                } else if (mark === '__') {
+                    wrapper.style.textDecoration = 'underline';
+                } else if (mark === '~~') {
+                    wrapper.style.textDecoration = 'line-through';
+                }
+                wrapper.appendChild(document.createTextNode(selectedText));
+                range.deleteContents();
+                range.insertNode(wrapper);
+                range.selectNodeContents(wrapper);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            } else {
+                document.execCommand('insertText', false, mark + mark);
+            }
+        }
+
+        // 撤销重做功能
+        let history = [];
+        let historyIndex = -1;
+
+        function saveHistory() {
+            const content = getEditorText();
+            // 只在内容变化时保存历史
+            if (history[historyIndex] !== content) {
+                // 清除当前索引之后的历史
+                history = history.slice(0, historyIndex + 1);
+                history.push(content);
+                historyIndex++;
+                // 限制历史记录数量
+                if (history.length > 50) {
+                    history.shift();
+                    historyIndex--;
+                }
+            }
+        }
+
+        async function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                const content = history[historyIndex];
+                await setEditorContent(content);
+            }
+        }
+
+        async function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                const content = history[historyIndex];
+                await setEditorContent(content);
+            }
+        }
+
+        // 格式刷功能
+        let copiedFormat = '';
+
+        function formatBrush() {
+            const selectedText = getEditorText().substring(
+                window.getSelection().getRangeAt(0).startOffset,
+                window.getSelection().getRangeAt(0).endOffset
+            );
+            if (selectedText) {
+                copiedFormat = selectedText;
+                alert('格式已复制');
+            } else {
+                if (copiedFormat) {
+                    document.execCommand('insertText', false, copiedFormat);
+                }
+            }
+        }
+
+        // 格式清除功能
+        function clearFormat() {
+            document.execCommand('removeFormat', false, null);
+        }
+
+
+
+        // 字体和字号
+        function changeFont(font) {
+            document.getElementById('noteContent').style.fontFamily = font;
+        }
+
+        function changeFontSize(size) {
+            document.getElementById('noteContent').style.fontSize = size;
+        }
+
+        // 文字颜色
+        function toggleColorMenu() {
+            const menu = document.getElementById('colorMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        function changeTextColor(color) {
+            document.execCommand('foreColor', false, color);
+            document.getElementById('colorMenu').classList.add('hidden');
+        }
+
+        // 文字高亮
+        function toggleHighlightMenu() {
+            const menu = document.getElementById('highlightMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        function highlightText(color) {
+            document.execCommand('hiliteColor', false, color);
+            document.getElementById('highlightMenu').classList.add('hidden');
+        }
+
+        // 获取编辑器纯文本内容
+        function getEditorText() {
+            const editor = document.getElementById('noteContent');
+            return editor.innerText || editor.textContent || '';
+        }
+
+        // 移除HTML标签获取纯文本
+        function stripHtml(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        }
+
+        // 设置编辑器内容（支持HTML）
+        async function setEditorContent(html) {
+            const editor = document.getElementById('noteContent');
+            editor.innerHTML = html;
+            
+            // 将图片引用ID转换为实际图片
+            await replaceImageReferences();
+        }
+        
+        // 替换图片引用为实际图片
+        async function replaceImageReferences() {
+            try {
+                const editor = document.getElementById('noteContent');
+                
+                // 处理文本中的图片引用
+                const textNodes = [];
+                function collectTextNodes(node) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        textNodes.push(node);
+                    } else {
+                        for (const child of node.childNodes) {
+                            collectTextNodes(child);
+                        }
+                    }
+                }
+                collectTextNodes(editor);
+                
+                for (const textNode of textNodes) {
+                    const content = textNode.textContent;
+                    const imageMatch = content.match(/\[image:(.+?)\]/);
+                    if (imageMatch) {
+                        const imageId = imageMatch[1];
+                        try {
+                            // 从IndexedDB获取图片
+                            const db = await initIndexedDB();
+                            const transaction = db.transaction('images', 'readonly');
+                            const imageStore = transaction.objectStore('images');
+                            const image = await imageStore.get(imageId);
+                            
+                            if (image) {
+                                // 创建img元素
+                                const img = document.createElement('img');
+                                img.src = image.data;
+                                img.className = 'max-w-full rounded-lg my-2';
+                                img.style.maxHeight = '300px';
+                                img.dataset.imageId = imageId;
+                                
+                                // 分割文本节点
+                                const beforeText = content.substring(0, imageMatch.index);
+                                const afterText = content.substring(imageMatch.index + imageMatch[0].length);
+                                
+                                if (beforeText) {
+                                    textNode.textContent = beforeText;
+                                } else {
+                                    textNode.parentNode.removeChild(textNode);
+                                }
+                                
+                                textNode.parentNode.insertBefore(img, textNode.nextSibling);
+                                
+                                if (afterText) {
+                                    const afterNode = document.createTextNode(afterText);
+                                    textNode.parentNode.insertBefore(afterNode, img.nextSibling);
+                                }
+                            }
+                            // 如果没有找到图片，保持原文不变
+                        } catch (imageError) {
+                            console.error('加载图片失败:', imageError);
+                            // 加载失败时保持原文不变，显示[image:xxx]标记
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('替换图片引用失败:', error);
+                // 整体失败时不做任何处理，保持原文不变
+            }
+        }
+
+        // 存储Base64图片到IndexedDB
+        async function storeBase64Image(imageData) {
+            try {
+                const db = await initIndexedDB();
+                const transaction = db.transaction('images', 'readwrite');
+                const imageStore = transaction.objectStore('images');
+                
+                // 生成唯一ID
+                const imageId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                
+                // 存储图片
+                await imageStore.add({
+                    id: imageId,
+                    data: imageData,
+                    timestamp: new Date().toISOString()
+                });
+                
+                return imageId;
+            } catch (error) {
+                console.error('存储图片失败:', error);
+                return null;
+            }
+        }
+
+        // 获取编辑器HTML内容
+        async function getEditorHTML() {
+            const editor = document.getElementById('noteContent');
+            const clone = editor.cloneNode(true);
+            
+            // 将图片元素转换为引用ID
+            const images = clone.querySelectorAll('img');
+            for (const img of images) {
+                if (img.dataset.imageId) {
+                    // 替换为引用标记
+                    const span = document.createElement('span');
+                    span.className = 'image-reference';
+                    span.dataset.imageId = img.dataset.imageId;
+                    span.textContent = `[image:${img.dataset.imageId}]`;
+                    img.parentNode.replaceChild(span, img);
+                } else if (img.src.startsWith('data:image')) {
+                    // 处理未存储的Base64图片
+                    const imageId = await storeBase64Image(img.src);
+                    if (imageId) {
+                        // 替换为引用标记
+                        const span = document.createElement('span');
+                        span.className = 'image-reference';
+                        span.dataset.imageId = imageId;
+                        span.textContent = `[image:${imageId}]`;
+                        img.parentNode.replaceChild(span, img);
+                    }
+                }
+            }
+            
+            return clone.innerHTML;
+        }
+
+        // 在光标位置插入图片
+        async function insertImage(imageData) {
+            const editor = document.getElementById('noteContent');
+            
+            try {
+                // 存储图片到IndexedDB
+                const db = await initIndexedDB();
+                const transaction = db.transaction('images', 'readwrite');
+                const imageStore = transaction.objectStore('images');
+                
+                // 生成唯一ID
+                const imageId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                
+                // 存储图片
+                await imageStore.add({
+                    id: imageId,
+                    data: imageData,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // 创建img元素，使用引用ID
+                const img = document.createElement('img');
+                img.src = imageData; // 临时使用Base64显示
+                img.className = 'max-w-full rounded-lg my-2';
+                img.style.maxHeight = '300px';
+                img.dataset.imageId = imageId; // 存储引用ID
+                
+                // 如果是contenteditable，插入图片元素
+                if (document.activeElement === editor || editor.contains(document.activeElement)) {
+                    const selection = window.getSelection();
+                    if (selection.rangeCount > 0) {
+                        const range = selection.getRangeAt(0);
+                        range.deleteContents();
+                        range.insertNode(img);
+                        range.collapse(false);
+                    } else {
+                        editor.appendChild(img);
+                    }
+                } else {
+                    editor.appendChild(img);
+                }
+                
+                // 在图片后添加换行
+                const br = document.createElement('br');
+                if (editor.lastChild === img) {
+                    editor.appendChild(br);
+                }
+                
+                // 触发input事件
+                const event = new Event('input', { bubbles: true });
+                editor.dispatchEvent(event);
+                editor.focus();
+            } catch (error) {
+                console.error('插入图片失败:', error);
+                // 失败时回退到直接插入Base64
+                const img = document.createElement('img');
+                img.src = imageData;
+                img.className = 'max-w-full rounded-lg my-2';
+                img.style.maxHeight = '300px';
+                editor.appendChild(img);
+            }
+        }
+
+        // 自动识别链接并转换为可点击链接
+        function autoLinkify() {
+            const editor = document.getElementById('noteContent');
+            if (!editor) return;
+
+            // 保存当前光标位置
+            let selection = window.getSelection();
+            let range = null;
+            if (selection.rangeCount > 0) {
+                range = selection.getRangeAt(0);
+            }
+
+            // 处理文本节点
+            function processNode(node) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = node.textContent;
+                    if (!text) return;
+
+                    // 匹配URL（支持http和https）
+                    const urlRegex = /(https?:\/\/[^\s]+)/g;
+                    let match;
+                    let lastIndex = 0;
+                    const parent = node.parentNode;
+
+                    while ((match = urlRegex.exec(text)) !== null) {
+                        const url = match[0];
+                        const startIndex = match.index;
+                        const endIndex = startIndex + url.length;
+
+                        // 创建文本节点（匹配前的文本）
+                        if (startIndex > lastIndex) {
+                            const textNode = document.createTextNode(text.substring(lastIndex, startIndex));
+                            parent.insertBefore(textNode, node);
+                        }
+
+                        // 创建链接元素
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        link.className = 'text-blue-600 hover:underline';
+                        link.textContent = url;
+                        parent.insertBefore(link, node);
+
+                        lastIndex = endIndex;
+                    }
+
+                    // 处理剩余文本
+                    if (lastIndex < text.length) {
+                        const textNode = document.createTextNode(text.substring(lastIndex));
+                        parent.insertBefore(textNode, node);
+                    }
+
+                    // 删除原节点
+                    parent.removeChild(node);
+                } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== 'A') {
+                    // 递归处理子节点
+                    const childNodes = Array.from(node.childNodes);
+                    for (const child of childNodes) {
+                        processNode(child);
+                    }
+                }
+            }
+
+            // 处理编辑器内容
+            const childNodes = Array.from(editor.childNodes);
+            for (const child of childNodes) {
+                processNode(child);
+            }
+
+            // 恢复光标位置
+            if (range) {
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        }
+
+        // 显示粘贴选项
+        function showPasteOptions(url) {
+            // 创建选项菜单
+            const menu = document.createElement('div');
+            menu.className = 'fixed z-50 bg-white shadow-lg rounded-lg border border-gray-200 p-2';
+            menu.style.position = 'fixed';
+            menu.style.left = '50%';
+            menu.style.top = '50%';
+            menu.style.transform = 'translate(-50%, -50%)';
+            menu.style.minWidth = '200px';
+            
+            // 添加标题
+            const title = document.createElement('div');
+            title.className = 'font-medium text-sm mb-2 px-2';
+            title.textContent = '粘贴链接选项';
+            menu.appendChild(title);
+            
+            // 只保存链接选项
+            const linkOption = document.createElement('button');
+            linkOption.className = 'w-full text-left px-2 py-1.5 rounded hover:bg-gray-100 text-sm';
+            linkOption.textContent = '只保存链接';
+            linkOption.onclick = () => {
+                insertLinkOnly(url);
+                document.body.removeChild(menu);
+            };
+            menu.appendChild(linkOption);
+            
+            // 保存链接+自动抓标题选项
+            const titleOption = document.createElement('button');
+            titleOption.className = 'w-full text-left px-2 py-1.5 rounded hover:bg-gray-100 text-sm';
+            titleOption.textContent = '保存链接+自动抓标题';
+            titleOption.onclick = () => {
+                insertLinkWithTitle(url);
+                document.body.removeChild(menu);
+            };
+            menu.appendChild(titleOption);
+            
+            // 取消选项
+            const cancelOption = document.createElement('button');
+            cancelOption.className = 'w-full text-left px-2 py-1.5 rounded hover:bg-gray-100 text-sm text-gray-500 mt-1';
+            cancelOption.textContent = '取消';
+            cancelOption.onclick = () => {
+                document.body.removeChild(menu);
+            };
+            menu.appendChild(cancelOption);
+            
+            // 点击外部关闭菜单
+            const handleClickOutside = (e) => {
+                if (!menu.contains(e.target)) {
+                    document.body.removeChild(menu);
+                    document.removeEventListener('click', handleClickOutside);
+                }
+            };
+            
+            document.addEventListener('click', handleClickOutside);
+            document.body.appendChild(menu);
+        }
+
+        // 只插入链接
+        function insertLinkOnly(url) {
+            const editor = document.getElementById('noteContent');
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.className = 'text-blue-600 hover:underline';
+            link.textContent = url;
+            
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(link);
+                range.collapse(false);
+            } else {
+                editor.appendChild(link);
+            }
+            
+            // 触发input事件
+            const event = new Event('input', { bubbles: true });
+            editor.dispatchEvent(event);
+        }
+
+        // 插入链接并尝试抓取标题和摘要
+        function insertLinkWithTitle(url) {
+            const editor = document.getElementById('noteContent');
+            
+            // 创建加载状态
+            const loading = document.createElement('span');
+            loading.className = 'text-gray-500';
+            loading.textContent = '正在抓取信息...';
+            
+            const selection = window.getSelection();
+            let range = null;
+            if (selection.rangeCount > 0) {
+                range = selection.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(loading);
+            } else {
+                editor.appendChild(loading);
+            }
+            
+            // 尝试抓取标题和生成摘要（本地处理）
+            setTimeout(() => {
+                // 简单的标题提取逻辑
+                let title = url;
+                try {
+                    const urlObj = new URL(url);
+                    title = urlObj.hostname.replace('www.', '') + (urlObj.pathname !== '/' ? urlObj.pathname : '');
+                } catch (e) {}
+                
+                // 生成简单摘要
+                let summary = generateSummary(url);
+                
+                // 创建链接元素
+                const link = document.createElement('a');
+                link.href = url;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.className = 'text-blue-600 hover:underline';
+                link.textContent = title;
+                
+                // 创建摘要元素
+                const summaryElement = document.createElement('p');
+                summaryElement.className = 'text-sm text-gray-500 mt-1';
+                summaryElement.textContent = summary;
+                
+                // 创建容器
+                const container = document.createElement('div');
+                container.className = 'my-2';
+                container.appendChild(link);
+                container.appendChild(summaryElement);
+                
+                // 替换加载状态
+                loading.parentNode.replaceChild(container, loading);
+                
+                // 触发input事件
+                const event = new Event('input', { bubbles: true });
+                editor.dispatchEvent(event);
+            }, 500);
+        }
+
+        // 生成简单摘要
+        function generateSummary(url) {
+            try {
+                const urlObj = new URL(url);
+                const hostname = urlObj.hostname.replace('www.', '');
+                const pathname = urlObj.pathname !== '/' ? urlObj.pathname : '';
+                
+                // 基于URL生成摘要
+                let summary = `来自 ${hostname} 的链接`;
+                
+                if (pathname) {
+                    // 提取路径中的关键词
+                    const pathParts = pathname.split('/').filter(part => part.length > 0);
+                    if (pathParts.length > 0) {
+                        summary += `，内容关于 ${pathParts.slice(0, 2).join('、')}`;
+                    }
+                }
+                
+                summary += '。点击查看详细内容。';
+                return summary;
+            } catch (e) {
+                return '网页链接。点击查看详细内容。';
+            }
+        }
+
+        // 处理图片上传
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                alert('请选择图片文件');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageData = e.target.result;
+                insertImage(imageData);
+            };
+            reader.readAsDataURL(file);
+            
+            // 清空input以便重复选择同一图片
+            event.target.value = '';
+        }
+
+        function insertImage(imageData) {
+            const textarea = document.getElementById('noteContent');
+            const start = textarea.selectionStart;
+            
+            // 创建Markdown图片格式
+            const imageMarkdown = `\n![图片](${imageData})\n`;
+            
+            textarea.value = textarea.value.substring(0, start) + imageMarkdown + textarea.value.substring(start);
+            textarea.selectionStart = textarea.selectionEnd = start + imageMarkdown.length;
+            textarea.focus();
+            
+            // 触发input事件
+            const event = new Event('input', { bubbles: true });
+            textarea.dispatchEvent(event);
+        }
+
+        // 拖拽粘贴图片支持
+        document.getElementById('noteContent').addEventListener('paste', function(event) {
+            const items = event.clipboardData.items;
+            
+            // 检查是否有图片
+            let hasImage = false;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith('image/')) {
+                    event.preventDefault();
+                    const file = items[i].getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        insertImage(e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                    hasImage = true;
+                    break;
+                }
+            }
+            
+            // 如果没有图片，检查是否是URL
+            if (!hasImage) {
+                const text = event.clipboardData.getData('text');
+                const urlRegex = /^https?:\/\/.+/;
+                if (urlRegex.test(text)) {
+                    event.preventDefault();
+                    showPasteOptions(text);
+                }
+            }
+        });
+
+        // 对齐方式
+        function alignText(align) {
+            document.getElementById('noteContent').style.textAlign = align;
+        }
+
+        // 监听内容变化，保存历史
+        document.getElementById('noteContent').addEventListener('input', saveHistory);
+
+        async function addNote() {
             const title = document.getElementById('noteTitle').value.trim();
-            const content = document.getElementById('noteContent').value.trim();
+            const content = await getEditorHTML();
 
             if (!title && !content) {
                 alert('请输入标题或内容');
                 return;
             }
 
-            const note = {
-                id: editingId || Date.now(),
-                title: title || '无标题',
-                content: content,
-                timestamp: new Date().toISOString()
-            };
-
+            let note;
             if (editingId) {
-                const index = notes.findIndex(n => n.id === editingId);
+                const existingNote = notes.find(n => String(n.id) === String(editingId));
+                note = {
+                    id: editingId,
+                    title: title || '无标题',
+                    content: content,
+                    timestamp: existingNote ? existingNote.timestamp : new Date().toISOString(), // 保持原有时间戳，不更新位置
+                    pinned: existingNote ? existingNote.pinned : false,
+                    starred: existingNote ? existingNote.starred : false,
+                    folder: existingNote ? existingNote.folder : currentFolder
+                };
+                const index = notes.findIndex(n => String(n.id) === String(editingId));
                 if (index !== -1) notes[index] = note;
+                // 编辑完成后清除editingId，避免冲突
                 editingId = null;
             } else {
+                note = {
+                    id: Date.now().toString(),
+                    title: title || '无标题',
+                    content: content,
+                    timestamp: new Date().toISOString(),
+                    pinned: false,
+                    starred: false,
+                    folder: currentFolder
+                };
                 notes.unshift(note);
             }
 
-            saveNotes();
-            clearForm();
+            // 重新排序笔记：置顶的笔记在前面，按时间倒序
+            notes.sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return new Date(b.timestamp) - new Date(a.timestamp);
+            });
+
+            await saveNotes();
+            
+            // 清空表单，无论新建还是编辑
+            await clearForm();
+            
             updateStats();
-            renderNotes();
             renderTagFilter();
+            
+            // 添加保存成功反馈
+            const feedback = document.createElement('div');
+            feedback.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
+            feedback.textContent = '笔记保存成功！';
+            document.body.appendChild(feedback);
+            setTimeout(() => feedback.remove(), 2000);
         }
 
         function renderNotes(searchTerm = '') {
@@ -460,17 +2341,83 @@
             const emptyState = document.getElementById('emptyState');
 
             let filtered = notes.filter(note => {
-                const term = searchTerm.toLowerCase().replace('#', '');
-                const matchSearch = !term ||
-                    note.title.toLowerCase().includes(term) ||
-                    note.content.toLowerCase().includes(term);
+                let matchSearch = true;
+                let matchTime = true;
+                let matchFolderSearch = true;
+                
+                // 处理搜索语法
+                if (searchTerm) {
+                    const terms = searchTerm.toLowerCase().split(' ');
+                    const regularTerms = [];
+                    
+                    for (const term of terms) {
+                        // 处理时间搜索: before:2025-01-01
+                        if (term.startsWith('before:')) {
+                            const dateStr = term.substring(7);
+                            const targetDate = new Date(dateStr);
+                            if (!isNaN(targetDate)) {
+                                const noteDate = new Date(note.timestamp);
+                                matchTime = noteDate < targetDate;
+                            }
+                        }
+                        // 处理文件夹搜索: in:日记
+                        else if (term.startsWith('in:')) {
+                            const folderName = term.substring(3);
+                            matchFolderSearch = note.folder === folderName;
+                        }
+                        // 常规搜索词
+                        else if (term) {
+                            regularTerms.push(term);
+                        }
+                    }
+                    
+                    // 处理常规搜索词
+                    if (regularTerms.length > 0) {
+                        const term = regularTerms.join(' ').replace('#', '');
+                        matchSearch = note.title.toLowerCase().includes(term) ||
+                            note.content.toLowerCase().includes(term);
+                    }
+                }
 
                 const matchTags = selectedTags.size === 0 ||
                     Array.from(selectedTags).every(tag =>
                         note.title.includes(`#${tag}`) || note.content.includes(`#${tag}`)
                     );
 
-                return matchSearch && matchTags;
+                const matchFolder = note.folder === currentFolder;
+
+                return matchSearch && matchTags && matchFolder && matchTime && matchFolderSearch;
+            });
+
+            // 获取排序选项
+            const sortOption = document.getElementById('sortOption').value;
+            
+            // 对过滤后的笔记进行排序
+            filtered.sort((a, b) => {
+                // 置顶的笔记始终在前面
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                
+                // 根据排序选项排序
+                if (sortOption === 'relevance' && searchTerm) {
+                    // 相关性排序：根据搜索词在标题和内容中的匹配程度
+                    const term = searchTerm.toLowerCase().replace('#', '');
+                    const aTitleMatch = a.title.toLowerCase().includes(term) ? 1 : 0;
+                    const aContentMatch = a.content.toLowerCase().includes(term) ? 1 : 0;
+                    const bTitleMatch = b.title.toLowerCase().includes(term) ? 1 : 0;
+                    const bContentMatch = b.content.toLowerCase().includes(term) ? 1 : 0;
+                    
+                    // 标题匹配权重更高
+                    const aScore = aTitleMatch * 2 + aContentMatch;
+                    const bScore = bTitleMatch * 2 + bContentMatch;
+                    
+                    if (aScore !== bScore) {
+                        return bScore - aScore;
+                    }
+                }
+                
+                // 默认按时间倒序
+                return new Date(b.timestamp) - new Date(a.timestamp);
             });
 
             if (filtered.length === 0 && notes.length === 0) {
@@ -490,74 +2437,160 @@
                 const tagRegex = /#(\w+)/g;
                 const tags = [];
                 let match;
-                while ((match = tagRegex.exec(note.title + ' ' + note.content)) !== null) {
+                while ((match = tagRegex.exec(note.title + ' ' + stripHtml(note.content))) !== null) {
                     if (!tags.includes(match[1])) tags.push(match[1]);
                 }
 
-                const preview = note.content.length > 80 ? note.content.substring(0, 80) + '...' : note.content;
+                const plainContent = stripHtml(note.content);
+                const preview = plainContent.length > 80 ? plainContent.substring(0, 80) + '...' : plainContent;
 
                 return `
-                    <div class="note-card glass rounded-2xl p-5 cursor-pointer" onclick="editNote(${note.id})">
+                    <div class="note-card glass rounded-2xl p-5 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-lg hover:scale-[1.02] relative group ${String(editingId) === String(note.id) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}" data-note-id="${note.id}">
+                        ${String(editingId) === String(note.id) ? '<div class="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-b from-indigo-500 to-purple-600 z-10 rounded-l-2xl"></div>' : ''}
+                        ${note.pinned ? '<div class="absolute top-3 right-3 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10 shadow-md pointer-events-none">置顶</div>' : ''}
                         <div class="flex justify-between items-start mb-3">
-                            <h3 class="font-bold text-lg line-clamp-2 flex-1">${escapeHtml(note.title)}</h3>
-                            <button onclick="event.stopPropagation(); deleteNote(${note.id})"
-                                    class="p-1.5 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
-                                <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"></path>
-                                </svg>
-                            </button>
+                            <h3 class="font-bold text-xl line-clamp-2 flex-1">${escapeHtml(note.title)}</h3>
+                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button class="p-1.5 hover:bg-blue-50 rounded-lg transition-colors" data-action="pin" data-note-id="${note.id}" title="${note.pinned ? '取消置顶' : '置顶'}">
+                                    <svg class="w-4 h-4 ${note.pinned ? 'text-blue-600 fill-blue-600' : 'text-blue-500'}" fill="${note.pinned ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
+                                    </svg>
+                                </button>
+                                <button class="p-1.5 hover:bg-green-50 rounded-lg transition-colors" data-action="move" data-note-id="${note.id}" title="移动到文件夹">
+                                    <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                    </svg>
+                                </button>
+                                <button class="p-1.5 hover:bg-red-50 rounded-lg transition-colors" data-action="delete" data-note-id="${note.id}" title="删除">
+                                    <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <p class="text-sm opacity-70 mb-3 line-clamp-3">${escapeHtml(preview)}</p>
-                        ${tags.length > 0 ? `<div class="flex flex-wrap gap-1 mb-3">${tags.slice(0, 3).map(t => `<span class="tag text-xs">#${t}</span>`).join('')}</div>` : ''}
+                        ${tags.length > 0 ? `<div class="flex flex-wrap gap-1 mb-3">${tags.slice(0, 3).map(t => {
+                            const colorClass = getTagColor(t);
+                            return `<span class="tag text-xs ${colorClass} px-2 py-1 rounded-full">#${t}</span>`;
+                        }).join('')}</div>` : ''}
                         <div class="flex justify-between items-center pt-3 border-t border-gray-200/50">
                             <span class="timestamp text-xs opacity-50">${formatTime(note.timestamp)}</span>
-                            <span class="text-xs opacity-50">${note.content.length} 字</span>
+                            <span class="text-xs opacity-50">${stripHtml(note.content).length} 字</span>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        function editNote(id) {
-            const note = notes.find(n => n.id === id);
-            if (!note) return;
+        async function editNote(id) {
+            // 确保id是字符串类型
+            id = String(id);
+            const note = notes.find(n => String(n.id) === id);
+            if (!note) {
+                alert('找不到要编辑的笔记，id: ' + id);
+                return;
+            }
 
+            // 清除之前的editingId
+            editingId = null;
+            
             document.getElementById('noteTitle').value = note.title;
-            document.getElementById('noteContent').value = note.content;
+            // 加载图片数据
+            const contentWithImages = await loadImagesForNote(note);
+            await setEditorContent(contentWithImages);
             editingId = id;
             detectTags();
+            renderNotes(); // 重新渲染笔记列表，更新选中态
+            // 确保切换到编辑模式
+            if (isPreviewMode) {
+                setEditMode('edit');
+            }
             document.getElementById('noteTitle').focus();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function deleteNote(id) {
+        async function deleteNote(id) {
+            // 确保id是字符串类型
+            id = String(id);
+            console.log('deleteNote called with id:', id, 'type:', typeof id);
+            console.log('notes array:', notes);
+            const noteToDelete = notes.find(n => String(n.id) === id);
+            console.log('noteToDelete:', noteToDelete);
+            if (!noteToDelete) {
+                alert('找不到要删除的笔记，id: ' + id);
+                return;
+            }
             if (!confirm('确定要删除这条笔记吗？')) return;
-            notes = notes.filter(n => n.id !== id);
-            saveNotes();
+            notes = notes.filter(n => String(n.id) !== id);
+            console.log('notes after filter:', notes);
+            await saveNotes();
             updateStats();
             renderNotes();
             renderTagFilter();
         }
 
-        function clearForm() {
-            document.getElementById('noteTitle').value = '';
-            document.getElementById('noteContent').value = '';
-            document.getElementById('detectedTags').innerHTML = '';
-            editingId = null;
-            if (showPreview) {
-                document.getElementById('previewArea').innerHTML = '';
+        async function pinNote(id) {
+            // 确保id是字符串类型
+            id = String(id);
+            const note = notes.find(n => String(n.id) === id);
+            if (!note) {
+                alert('找不到要置顶的笔记，id: ' + id);
+                return;
             }
+            
+            // 切换置顶状态
+            note.pinned = !note.pinned;
+            
+            // 重新排序笔记：置顶的笔记在前面，按时间倒序
+            notes.sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return new Date(b.timestamp) - new Date(a.timestamp);
+            });
+            
+            await saveNotes();
+            renderNotes();
         }
 
-        function saveNotes() {
-            const encrypted = encrypt(JSON.stringify(notes), ENCRYPTION_KEY);
-            localStorage.setItem('encryptedNotes', encrypted);
+        async function starNote(id) {
+            // 确保id是字符串类型
+            id = String(id);
+            const note = notes.find(n => String(n.id) === id);
+            if (!note) return;
+            
+            // 切换收藏状态
+            note.starred = !note.starred;
+            
+            await saveNotes();
+            renderNotes();
+        }
+
+        async function clearForm() {
+            document.getElementById('noteTitle').value = '';
+            await setEditorContent('');
+            document.getElementById('detectedTags').innerHTML = '';
+            editingId = null;
+            renderNotes(); // 重新渲染笔记列表，清除选中态
+            if (isPreviewMode) {
+                setEditMode('edit');
+            }
+            document.getElementById('previewArea').innerHTML = '';
+        }
+
+
+
+        // 移除HTML标签，获取纯文本
+        function stripHtml(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
         }
 
         function updateStats() {
             const total = notes.length;
-            const totalChars = notes.reduce((sum, note) => sum + note.content.length, 0);
-            document.getElementById('stats').textContent = `共 ${total} 条笔记 · ${totalChars} 字`;
+            const totalChars = notes.reduce((sum, note) => sum + stripHtml(note.content).length, 0);
+            
+            document.getElementById('stats').textContent = `共 ${total} 条笔记 · 总 ${totalChars} 字`;
         }
 
         function exportNotes() {
@@ -565,15 +2598,166 @@
                 alert('没有笔记可导出');
                 return;
             }
-            const dataStr = JSON.stringify(notes, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
+            
+            // 提供格式选择
+            const format = prompt('请选择导出格式：\n1. Markdown (md)\n2. 文本 (txt)\n3. JSON (json)', '1');
+            
+            let content, mimeType, extension;
+            
+            switch (format) {
+                case '1':
+                    // Markdown 格式
+                    content = notes.map(note => {
+                        const date = new Date(note.timestamp).toLocaleString();
+                        return `# ${note.title}\n\n${note.content}\n\n---\n创建时间：${date}\n`;
+                    }).join('\n');
+                    mimeType = 'text/markdown';
+                    extension = 'md';
+                    break;
+                case '2':
+                    // 文本格式
+                    content = notes.map(note => {
+                        const date = new Date(note.timestamp).toLocaleString();
+                        return `标题：${note.title}\n内容：${note.content}\n创建时间：${date}\n${'-'.repeat(50)}\n`;
+                    }).join('\n');
+                    mimeType = 'text/plain';
+                    extension = 'txt';
+                    break;
+                case '3':
+                default:
+                    // JSON 格式
+                    content = JSON.stringify(notes, null, 2);
+                    mimeType = 'application/json';
+                    extension = 'json';
+                    break;
+            }
+            
+            const blob = new Blob([content], { type: mimeType });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `notes_${new Date().toISOString().split('T')[0]}.json`;
+            link.download = `notes_${new Date().toISOString().split('T')[0]}.${extension}`;
             link.click();
             URL.revokeObjectURL(url);
         }
+
+        // 计算内容hash
+        async function calculateContentHash(content) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(content);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // 检查笔记是否重复
+        async function checkNoteDuplicate(title, content) {
+            const contentHash = await calculateContentHash(content);
+            
+            for (const note of notes) {
+                const noteHash = await calculateContentHash(note.content);
+                if (noteHash === contentHash) {
+                    return note;
+                }
+            }
+            return null;
+        }
+
+        // 导入笔记
+        document.getElementById('importInput').addEventListener('change', function(event) {
+            const files = event.target.files;
+            if (!files.length) return;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const content = e.target.result;
+                    const fileName = file.name;
+                    const fileExtension = fileName.split('.').pop().toLowerCase();
+
+                    let title, noteContent;
+
+                    switch (fileExtension) {
+                        case 'md':
+                            // 处理Markdown文件
+                            title = fileName.replace('.md', '');
+                            noteContent = content;
+                            break;
+                        case 'txt':
+                            // 处理纯文本文件
+                            title = fileName.replace('.txt', '');
+                            noteContent = content.replace(/\n/g, '<br>');
+                            break;
+                        case 'html':
+                            // 处理HTML文件
+                            title = fileName.replace('.html', '');
+                            noteContent = content;
+                            break;
+                        default:
+                            title = fileName;
+                            noteContent = content;
+                    }
+
+                    // 检查是否重复
+                    const duplicateNote = await checkNoteDuplicate(title, noteContent);
+                    
+                    if (duplicateNote) {
+                        // 提示用户选择
+                        const choice = prompt(`发现重复笔记："${duplicateNote.title}"\n\n请选择操作：\n1. 跳过\n2. 覆盖\n3. 重命名\n\n请输入数字 1-3`, '1');
+                        
+                        switch (choice) {
+                            case '1':
+                                // 跳过
+                                return;
+                            case '2':
+                                // 覆盖
+                                duplicateNote.title = title;
+                                duplicateNote.content = noteContent;
+                                duplicateNote.timestamp = new Date().toISOString();
+                                // 保持原有的文件夹ID，确保一致性
+                                break;
+                            case '3':
+                                // 重命名
+                                const newTitle = prompt('请输入新标题：', title);
+                                if (!newTitle) return;
+                                title = newTitle;
+                                break;
+                            default:
+                                // 跳过
+                                return;
+                        }
+                    }
+
+                    // 让用户选择目标文件夹
+                    const folderNames = folders.map(f => f.name);
+                    const folderChoice = prompt(`请选择导入到哪个文件夹：\n${folderNames.map((name, index) => `${index + 1}. ${name}`).join('\n')}\n\n请输入数字 1-${folderNames.length}`, '1');
+                    const folderIndex = parseInt(folderChoice) - 1;
+                    const targetFolder = folderIndex >= 0 && folderIndex < folders.length ? folders[folderIndex].id : 'default';
+                    
+                    // 创建新笔记（如果不是覆盖）
+                    if (!duplicateNote || choice === '3') {
+                        const newNote = {
+                            id: Date.now().toString(),
+                            title: title,
+                            content: noteContent,
+                            timestamp: new Date().toISOString(),
+                            folder: targetFolder, // 使用用户选择的文件夹
+                            tags: [],
+                            pinned: false
+                        };
+
+                        notes.unshift(newNote);
+                    }
+
+                    await saveNotes();
+                    renderNotes();
+                };
+                reader.readAsText(file);
+            });
+
+            // 清空文件输入
+            event.target.value = '';
+        });
 
         function formatTime(timestamp) {
             const date = new Date(timestamp);
@@ -594,7 +2778,191 @@
             return div.innerHTML;
         }
 
+        // 背景设置相关函数
+        function toggleBackgroundSettings() {
+            const panel = document.getElementById('backgroundSettings');
+            panel.classList.toggle('hidden');
+        }
+
+        function setBackground(background) {
+            localStorage.setItem('background', background);
+            applyBackground();
+        }
+
+        function uploadBackground() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const imageUrl = event.target.result;
+                        localStorage.setItem('background', imageUrl);
+                        applyBackground();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+        }
+
+        function applyBackground() {
+            const background = localStorage.getItem('background');
+            const body = document.body;
+            
+            if (background === 'gradient' || !background) {
+                body.style.background = 'var(--bg-primary)';
+                body.style.backgroundSize = 'cover';
+                body.style.backgroundPosition = 'center';
+                body.style.backgroundRepeat = 'no-repeat';
+            } else {
+                body.style.background = `url('${background}')`;
+                body.style.backgroundSize = 'cover';
+                body.style.backgroundPosition = 'center';
+                body.style.backgroundRepeat = 'no-repeat';
+            }
+        }
+
+        // 修改init函数，添加背景初始化
+        async function init() {
+            if (isDark) document.body.classList.add('dark');
+            // 应用背景
+            applyBackground();
+            // 加载笔记
+            notes = await loadNotes();
+            // 初始化本地备份
+            await initLocalBackup();
+            updateStats();
+            renderFolders();
+            renderNotes();
+            renderTagFilter();
+
+            document.getElementById('searchInput').addEventListener('input', (e) => renderNotes(e.target.value));
+            document.getElementById('sortOption').addEventListener('change', () => renderNotes(document.getElementById('searchInput').value));
+            document.getElementById('noteTitle').addEventListener('input', detectTags);
+            document.getElementById('noteContent').addEventListener('input', (e) => {
+                detectTags();
+                // 暂时禁用autoLinkify，避免输入重复
+                // autoLinkify();
+                // 如果预览是打开状态，实时更新预览内容
+                if (isPreviewMode) {
+                    updatePreview();
+                }
+            });
+
+            // 添加笔记卡片事件监听器
+            const notesContainer = document.getElementById('notesContainer');
+            if (notesContainer) {
+                notesContainer.addEventListener('click', function(e) {
+                    const noteCard = e.target.closest('.note-card');
+                    if (noteCard) {
+                        const noteId = noteCard.dataset.noteId;
+                        if (noteId) {
+                            const actionButton = e.target.closest('[data-action]');
+                            if (actionButton) {
+                                // 阻止事件冒泡，避免触发笔记卡片的点击事件
+                                e.stopPropagation();
+                                const action = actionButton.dataset.action;
+                                const actionNoteId = actionButton.dataset.noteId;
+                                switch (action) {
+                                    case 'pin':
+                                        pinNote(actionNoteId);
+                                        break;
+                                    case 'move':
+                                        moveNoteToFolder(actionNoteId);
+                                        break;
+                                    case 'delete':
+                                        deleteNote(actionNoteId);
+                                        break;
+                                }
+                            } else {
+                                editNote(noteId);
+                            }
+                        }
+                    }
+                });
+                
+                // 添加右键菜单事件
+                notesContainer.addEventListener('contextmenu', function(e) {
+                    const noteCard = e.target.closest('.note-card');
+                    if (noteCard) {
+                        e.preventDefault();
+                        const noteId = noteCard.dataset.noteId;
+                        if (noteId) {
+                            showContextMenu(e, noteId);
+                        }
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'Enter') addNote();
+                
+                // 拦截Ctrl+Z和Ctrl+Y，统一撤销/重做行为
+                if (e.ctrlKey) {
+                    if (e.key === 'z' && !e.shiftKey) {
+                        e.preventDefault();
+                        undo();
+                    } else if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) {
+                        e.preventDefault();
+                        redo();
+                    }
+                }
+            });
+
+            // 启用自动保存
+            setupAutoSave();
+            // 初始化新建菜单
+            initNewNoteMenu();
+        }
+
+        // 初始化新建菜单
+        function initNewNoteMenu() {
+            const newNoteBtn = document.getElementById('newNoteBtn');
+            const newNoteMenu = document.getElementById('newNoteMenu');
+            
+            if (newNoteBtn && newNoteMenu) {
+                newNoteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    newNoteMenu.classList.toggle('hidden');
+                });
+                
+                // 点击其他地方关闭菜单
+                document.addEventListener('click', (e) => {
+                    if (!newNoteBtn.contains(e.target) && !newNoteMenu.contains(e.target)) {
+                        newNoteMenu.classList.add('hidden');
+                    }
+                });
+            }
+        }
+
+        // 新建空白文档
+        async function newBlankNote() {
+            await clearForm();
+            document.getElementById('noteTitle').focus();
+            document.getElementById('newNoteMenu').classList.add('hidden');
+        }
+
         document.addEventListener('DOMContentLoaded', init);
     </script>
-</body>
+        
+        <!-- Service Worker 注册 -->
+        <script>
+            if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/service-worker.js')
+                        .then((registration) => {
+                            console.log('Service Worker 注册成功:', registration.scope);
+                        })
+                        .catch((error) => {
+                            console.log('Service Worker 注册失败:', error);
+                        });
+                });
+            } else if (window.location.protocol === 'file:') {
+                console.log('在 file:// 协议下不注册 Service Worker');
+            }
+        </script>
+    </body>
 </html>
