@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>拾光 - Obsidian风格笔记</title>
+    <title>拾光</title>
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,7 +16,6 @@
             --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --bg-glass: rgba(255, 255, 255, 0.95);
             --text-primary: #1f2937;
-            --text-secondary: #6b7280;
             --border-color: rgba(255, 255, 255, 0.2);
         }
 
@@ -24,7 +23,6 @@
             --bg-primary: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             --bg-glass: rgba(30, 30, 50, 0.95);
             --text-primary: #f3f4f6;
-            --text-secondary: #9ca3af;
             --border-color: rgba(255, 255, 255, 0.1);
         }
 
@@ -43,55 +41,17 @@
             transition: all 0.3s;
         }
 
-        .dark .glass {
-            background: var(--bg-glass);
-        }
-
-        .dark body {
-            background: var(--bg-primary);
-        }
-
-        .dark .glass {
-            color: var(--text-primary);
-        }
-
-        .dark .text-gray-800 {
-            color: #f3f4f6;
-        }
-
-        .dark .text-gray-700 {
-            color: #e5e7eb;
-        }
-
-        .dark .text-gray-600 {
-            color: #d1d5db;
-        }
-
-        .dark .text-gray-500 {
-            color: #9ca3af;
-        }
-
-        .dark .bg-gray-50 {
-            background-color: rgba(55, 65, 81, 0.5);
-        }
-
-        .dark .bg-gray-100 {
-            background-color: rgba(75, 85, 99, 0.7);
-        }
-
-        .dark .border-gray-200 {
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .dark input, .dark textarea {
-            background-color: rgba(55, 65, 81, 0.5);
-            color: #f3f4f6;
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .dark input::placeholder, .dark textarea::placeholder {
-            color: #9ca3af;
-        }
+        .dark body { background: var(--bg-primary); }
+        .dark .glass { background: var(--bg-glass); color: var(--text-primary); }
+        .dark .text-gray-800 { color: #f3f4f6; }
+        .dark .text-gray-700 { color: #e5e7eb; }
+        .dark .text-gray-600 { color: #d1d5db; }
+        .dark .text-gray-500 { color: #9ca3af; }
+        .dark .bg-gray-50 { background-color: rgba(55, 65, 81, 0.5); }
+        .dark .bg-gray-100 { background-color: rgba(75, 85, 99, 0.7); }
+        .dark .border-gray-200 { border-color: rgba(255, 255, 255, 0.1); }
+        .dark input, .dark textarea { background-color: rgba(55, 65, 81, 0.5); color: #f3f4f6; border-color: rgba(255, 255, 255, 0.1); }
+        .dark input::placeholder, .dark textarea::placeholder { color: #9ca3af; }
 
         .note-card {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -99,7 +59,7 @@
         }
 
         .note-card:hover {
-            transform: translateY(-4px) scale(1.02);
+            transform: translateY(-4px);
             box-shadow: 0 20px 40px rgba(0,0,0,0.15);
         }
 
@@ -112,17 +72,10 @@
             to { opacity: 0; transform: scale(0.9); }
         }
 
-        .deleting {
-            animation: fadeOut 0.3s ease-out forwards;
-        }
-
-        .search-input:focus {
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
+        .deleting { animation: fadeOut 0.3s ease-out forwards; }
 
         .tag {
             display: inline-flex;
-            align-items: center;
             padding: 2px 8px;
             border-radius: 12px;
             font-size: 12px;
@@ -130,22 +83,11 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             margin: 2px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .tag:hover {
-            transform: scale(1.05);
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
         }
 
         .tag.inactive {
-            opacity: 0.5;
+            opacity: 0.4;
             background: #9ca3af;
-        }
-
-        .timestamp {
-            font-family: 'JetBrains Mono', monospace;
         }
 
         .empty-state {
@@ -157,248 +99,38 @@
             50% { transform: translateY(-20px); }
         }
 
-        .md-preview h1 { font-size: 1.5rem; font-weight: bold; margin: 1rem 0 0.5rem; }
-        .md-preview h2 { font-size: 1.25rem; font-weight: bold; margin: 0.875rem 0 0.5rem; }
-        .md-preview h3 { font-size: 1.125rem; font-weight: bold; margin: 0.75rem 0 0.5rem; }
-        .md-preview p { margin: 0.5rem 0; line-height: 1.6; }
-        .md-preview ul, .md-preview ol { margin: 0.5rem 0; padding-left: 1.5rem; }
-        .md-preview li { margin: 0.25rem 0; }
-        .md-preview code { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.9em; }
-        .md-preview pre { background: rgba(0,0,0,0.1); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 0.5rem 0; }
-        .md-preview pre code { background: none; padding: 0; }
-        .md-preview blockquote { border-left: 4px solid #667eea; padding-left: 1rem; margin: 0.5rem 0; color: var(--text-secondary); }
-        .md-preview strong { font-weight: bold; }
-        .md-preview em { font-style: italic; }
-        .md-preview a { color: #667eea; text-decoration: underline; }
-        .md-preview hr { border: none; border-top: 2px solid rgba(102, 126, 234, 0.3); margin: 1rem 0; }
-
-        .dark .md-preview code { background: rgba(255,255,255,0.1); }
-        .dark .md-preview pre { background: rgba(255,255,255,0.05); }
-        .dark .md-preview blockquote { border-left-color: #667eea; }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .dark .modal-content {
-            background: #1f2937;
-        }
-
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 280px;
-            height: 100vh;
-            background: var(--bg-glass);
-            backdrop-filter: blur(10px);
-            border-right: 1px solid var(--border-color);
-            padding: 20px;
-            overflow-y: auto;
-            z-index: 100;
-            transition: transform 0.3s;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            .main-content {
-                margin-left: 0 !important;
-            }
-        }
-
-        .main-content {
-            margin-left: 280px;
-            padding: 20px;
-            min-height: 100vh;
-        }
-
-        .daily-note-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .daily-note-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-            padding: 16px;
-            border-radius: 12px;
-            text-align: center;
-        }
-
-        .dark .stat-card {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-        }
+        .timestamp { font-family: 'JetBrains Mono', monospace; }
 
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
         .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
-        .dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
     </style>
 </head>
-<body>
-    <!-- 侧边栏 -->
-    <div id="sidebar" class="sidebar">
-        <div class="flex items-center gap-3 mb-6">
-            <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                </svg>
-            </div>
-            <h1 class="text-xl font-bold">拾光</h1>
-        </div>
-
-        <!-- 每日笔记 -->
-        <div class="daily-note-card" onclick="openDailyNote()">
-            <div class="text-sm opacity-80">今日</div>
-            <div class="text-lg font-bold" id="dailyNoteDate"></div>
-        </div>
-
-        <!-- 标签筛选 -->
-        <div class="mb-6">
-            <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                </svg>
-                标签
-            </h3>
-            <div id="tagFilter" class="flex flex-wrap gap-1"></div>
-        </div>
-
-        <!-- 统计 -->
-        <div class="mb-6">
-            <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-                统计
-            </h3>
-            <div class="grid grid-cols-2 gap-3">
-                <div class="stat-card">
-                    <div class="text-2xl font-bold" id="totalNotes">0</div>
-                    <div class="text-xs opacity-70">笔记总数</div>
-                </div>
-                <div class="stat-card">
-                    <div class="text-2xl font-bold" id="totalChars">0</div>
-                    <div class="text-xs opacity-70">总字符</div>
-                </div>
-                <div class="stat-card">
-                    <div class="text-2xl font-bold" id="streakDays">0</div>
-                    <div class="text-xs opacity-70">连续天数</div>
-                </div>
-                <div class="stat-card">
-                    <div class="text-2xl font-bold" id="totalTags">0</div>
-                    <div class="text-xs opacity-70">标签数</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 模板 -->
-        <div class="mb-6">
-            <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
-                </svg>
-                模板
-            </h3>
-            <div class="space-y-2">
-                <button onclick="useTemplate('daily')" class="w-full text-left px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-sm transition-colors">
-                    📅 每日日志
-                </button>
-                <button onclick="useTemplate('meeting')" class="w-full text-left px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-sm transition-colors">
-                    📝 会议记录
-                </button>
-                <button onclick="useTemplate('idea')" class="w-full text-left px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-sm transition-colors">
-                    💡 想法记录
-                </button>
-                <button onclick="useTemplate('todo')" class="w-full text-left px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-sm transition-colors">
-                    ✅ 待办事项
-                </button>
-            </div>
-        </div>
-
-        <!-- 设置 -->
-        <div class="mt-auto">
-            <button onclick="toggleDarkMode()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-sm transition-colors">
-                <svg id="themeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-                </svg>
-                <span id="themeText">深色模式</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- 主内容区 -->
-    <div class="main-content">
-        <!-- 移动端菜单按钮 -->
-        <button onclick="toggleSidebar()" class="md:hidden fixed top-4 left-4 z-50 p-2 glass rounded-lg">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
-        </button>
-
+<body class="p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
         <!-- 头部 -->
         <header class="glass rounded-3xl p-6 mb-6 shadow-2xl">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex items-center gap-3 md:ml-12">
+                <div class="flex items-center gap-3">
                     <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
                         <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                         </svg>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold">我的笔记</h1>
-                        <p class="text-sm opacity-70" id="statsHeader">加载中...</p>
+                        <h1 class="text-2xl font-bold">拾光</h1>
+                        <p class="text-sm opacity-70" id="stats">共 0 条笔记</p>
                     </div>
                 </div>
 
-                <div class="flex gap-3 w-full md:w-auto">
-                    <div class="relative flex-1 md:w-64">
-                        <input type="text" id="searchInput" placeholder="搜索笔记或标签..."
-                            class="search-input w-full pl-10 pr-4 py-3 rounded-xl border-2 focus:border-indigo-500 focus:outline-none transition-all">
-                        <svg class="w-5 h-5 absolute left-3 top-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                <div class="flex gap-2">
+                    <button onclick="toggleTheme()" class="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors" title="切换主题">
+                        <svg id="themeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                         </svg>
-                    </div>
+                    </button>
                     <button onclick="exportNotes()" class="hidden md:flex items-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-medium">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
@@ -407,50 +139,54 @@
                     </button>
                 </div>
             </div>
+
+            <!-- 搜索框 -->
+            <div class="mt-4">
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="搜索笔记或 #标签..."
+                        class="w-full pl-10 pr-4 py-3 rounded-xl border-2 focus:border-indigo-500 focus:outline-none transition-all">
+                    <svg class="w-5 h-5 absolute left-3 top-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 标签筛选 -->
+            <div id="tagFilter" class="flex flex-wrap gap-2 mt-3"></div>
         </header>
 
-        <!-- 新建笔记区域 -->
+        <!-- 新建笔记 -->
         <div class="glass rounded-3xl p-6 mb-6 shadow-xl">
-            <div class="mb-4">
-                <input type="text" id="noteTitle" placeholder="标题（支持 #标签）..."
-                    class="w-full text-xl font-bold bg-transparent border-b-2 border-gray-200 focus:border-indigo-500 focus:outline-none py-2 px-1 transition-colors placeholder-gray-400">
-            </div>
-            <div class="relative">
-                <textarea id="noteContent" placeholder="写下你的想法...&#10;&#10;支持的格式：&#10;- #标签 自动识别 &#10;- **粗体** *斜体* `代码`&#10;- - 列表项&#10;- > 引用块&#10;- --- 分隔线" rows="6"
-                    class="w-full rounded-xl p-4 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all leading-relaxed"></textarea>
-                <div id="contentPreview" class="hidden md:block absolute top-0 right-0 w-1/2 h-full p-4 bg-gray-50 rounded-r-xl overflow-y-auto md-preview"></div>
-            </div>
+            <input type="text" id="noteTitle" placeholder="标题（支持 #标签）..."
+                class="w-full text-xl font-bold bg-transparent border-b-2 border-gray-200 focus:border-indigo-500 focus:outline-none py-2 px-1 transition-colors placeholder-gray-400 mb-4">
 
-            <!-- 标签显示 -->
+            <textarea id="noteContent" placeholder="写下你的想法..." rows="4"
+                class="w-full rounded-xl p-4 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all leading-relaxed"></textarea>
+
             <div id="detectedTags" class="flex flex-wrap gap-1 mt-3 mb-4"></div>
 
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div class="flex gap-2">
-                    <button onclick="togglePreview()" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-sm flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                        </svg>
-                        <span id="previewBtn">预览</span>
+                <div id="previewBtn" class="hidden md:flex">
+                    <button onclick="togglePreview()" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-sm">
+                        预览
                     </button>
                 </div>
                 <div class="flex gap-2 w-full sm:w-auto">
                     <button onclick="clearForm()" class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl border-2 border-gray-300 hover:bg-gray-50 font-medium transition-all">
                         清空
                     </button>
-                    <button onclick="addNote()" class="flex-1 sm:flex-none px-8 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all font-medium flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        保存笔记
+                    <button onclick="addNote()" class="flex-1 sm:flex-none px-8 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all font-medium">
+                        保存
                     </button>
                 </div>
             </div>
+
+            <!-- 预览区域 -->
+            <div id="previewArea" class="hidden mt-4 p-4 bg-gray-50 rounded-xl max-h-64 overflow-y-auto"></div>
         </div>
 
         <!-- 笔记列表 -->
-        <div id="notesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        </div>
+        <div id="notesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
 
         <!-- 空状态 -->
         <div id="emptyState" class="hidden text-center py-20">
@@ -459,83 +195,21 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
             </div>
-            <p class="text-lg opacity-50">还没有笔记，开始记录吧！</p>
+            <p class="text-lg opacity-50">还没有笔记，开始记录吧</p>
         </div>
     </div>
 
     <script>
-        let notes = JSON.parse(localStorage.getItem('obsidianNotes')) || [];
+        let notes = JSON.parse(localStorage.getItem('myNotes')) || [];
         let editingId = null;
         let selectedTags = new Set();
+        let isDark = localStorage.getItem('darkMode') === 'true';
         let showPreview = false;
-        let isDarkMode = localStorage.getItem('darkMode') === 'true';
-
-        const templates = {
-            daily: `# {{date}} 日记
-
-## 今日目标
-- [ ]
-
-## 完成情况
-
-
-## 明日计划
-
-`,
-            meeting: `# 会议记录 - {{date}}
-
-## 会议主题
-
-
-## 参会人员
-
-
-## 讨论内容
-
-
-## 决议事项
-
-`,
-            idea: `# 💡 想法 - {{date}}
-
-## 想法描述
-
-
-## 背景
-
-
-## 可行性分析
-
-
-## 下一步行动
-
-`,
-            todo: `# ✅ 待办 - {{date}}
-
-## 紧急且重要
-- [ ]
-
-## 重要不紧急
-- [ ]
-
-## 紧急不重要
-- [ ]
-
-## 不紧急不重要
-- [ ]
-
-`
-        };
 
         function init() {
-            if (isDarkMode) {
-                document.body.classList.add('dark');
-                document.getElementById('themeText').textContent = '浅色模式';
-                document.getElementById('themeIcon').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>';
-            }
+            if (isDark) document.body.classList.add('dark');
             updateStats();
             renderNotes();
-            updateDailyNote();
             renderTagFilter();
 
             document.getElementById('searchInput').addEventListener('input', (e) => renderNotes(e.target.value));
@@ -547,66 +221,10 @@
             });
         }
 
-        function toggleDarkMode() {
-            isDarkMode = !isDarkMode;
+        function toggleTheme() {
+            isDark = !isDark;
             document.body.classList.toggle('dark');
-            localStorage.setItem('darkMode', isDarkMode);
-            document.getElementById('themeText').textContent = isDarkMode ? '浅色模式' : '深色模式';
-            document.getElementById('themeIcon').innerHTML = isDarkMode
-                ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>'
-                : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>';
-        }
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-        }
-
-        function togglePreview() {
-            showPreview = !showPreview;
-            const preview = document.getElementById('contentPreview');
-            const textarea = document.getElementById('noteContent');
-            const btn = document.getElementById('previewBtn');
-
-            if (showPreview) {
-                preview.classList.remove('hidden');
-                textarea.classList.remove('w-full');
-                textarea.classList.add('w-1/2');
-                btn.textContent = '编辑';
-                updatePreview();
-            } else {
-                preview.classList.add('hidden');
-                textarea.classList.add('w-full');
-                textarea.classList.remove('w-1/2');
-                btn.textContent = '预览';
-            }
-        }
-
-        function updatePreview() {
-            const content = document.getElementById('noteContent').value;
-            document.getElementById('contentPreview').innerHTML = parseMarkdown(content);
-        }
-
-        function parseMarkdown(text) {
-            if (!text) return '';
-
-            let html = text
-                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-                .replace(/`([^`]+)`/g, '<code>$1</code>')
-                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                .replace(/^\> (.+)$/gm, '<blockquote>$1</blockquote>')
-                .replace(/^- \[x\] (.+)$/gm, '<div class="flex items-center gap-2"><input type="checkbox" checked disabled><span>$1</span></div>')
-                .replace(/^- \[ \] (.+)$/gm, '<div class="flex items-center gap-2"><input type="checkbox" disabled><span>$1</span></div>')
-                .replace(/^- (.+)$/gm, '<li>$1</li>')
-                .replace(/^---$/gm, '<hr>')
-                .replace(/\n\n/g, '</p><p>')
-                .replace(/#(\w+)/g, '<span class="tag">#$1</span>')
-                .replace(/\n/g, '<br>');
-
-            return `<p>${html}</p>`;
+            localStorage.setItem('darkMode', isDark);
         }
 
         function detectTags() {
@@ -621,12 +239,7 @@
                 tags.add(match[1]);
             }
 
-            const container = document.getElementById('detectedTags');
-            container.innerHTML = Array.from(tags).map(tag =>
-                `<span class="tag">#${tag}</span>`
-            ).join('');
-
-            if (showPreview) updatePreview();
+            document.getElementById('detectedTags').innerHTML = Array.from(tags).map(t => `<span class="tag">#${t}</span>`).join('');
         }
 
         function getAllTags() {
@@ -646,17 +259,16 @@
             const container = document.getElementById('tagFilter');
 
             if (tags.size === 0) {
-                container.innerHTML = '<span class="text-xs opacity-50">暂无标签</span>';
+                container.innerHTML = '';
                 return;
             }
 
-            container.innerHTML = Array.from(tags).map(tag => {
-                const isActive = selectedTags.has(tag);
-                return `<span class="tag ${isActive ? '' : 'inactive'}" onclick="toggleTagFilter('${tag}')">#${tag}</span>`;
-            }).join('');
+            container.innerHTML = Array.from(tags).map(tag =>
+                `<span class="tag ${selectedTags.has(tag) ? '' : 'inactive'}" onclick="toggleTag('${tag}')">#${tag}</span>`
+            ).join('');
         }
 
-        function toggleTagFilter(tag) {
+        function toggleTag(tag) {
             if (selectedTags.has(tag)) {
                 selectedTags.delete(tag);
             } else {
@@ -666,41 +278,35 @@
             renderNotes(document.getElementById('searchInput').value);
         }
 
-        function updateDailyNote() {
-            const now = new Date();
-            const options = { weekday: 'long', month: 'long', day: 'numeric' };
-            document.getElementById('dailyNoteDate').textContent = now.toLocaleDateString('zh-CN', options);
+        function togglePreview() {
+            showPreview = !showPreview;
+            const area = document.getElementById('previewArea');
+            const btn = document.querySelector('#previewBtn button');
+
+            if (showPreview) {
+                area.classList.remove('hidden');
+                btn.textContent = '关闭预览';
+                updatePreview();
+            } else {
+                area.classList.add('hidden');
+                btn.textContent = '预览';
+            }
         }
 
-        function openDailyNote() {
-            const now = new Date();
-            const dateStr = now.toISOString().split('T')[0];
-            const title = `# ${dateStr} 日记\n\n## 今日目标\n- [ ] \n\n## 完成情况\n\n\n`;
+        function updatePreview() {
+            const content = document.getElementById('noteContent').value;
+            let html = content
+                .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>')
+                .replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold mt-3 mb-2">$1</h2>')
+                .replace(/^### (.+)$/gm, '<h3 class="text-base font-bold mt-2 mb-1">$1</h3>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/`([^`]+)`/g, '<code class="bg-gray-200 px-1 rounded">$1</code>')
+                .replace(/^- (.+)$/gm, '<li class="ml-4">$1</li>')
+                .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-indigo-500 pl-4 italic my-2">$1</blockquote>')
+                .replace(/\n/g, '<br>');
 
-            document.getElementById('noteTitle').value = `#${dateStr} 日记`;
-            document.getElementById('noteContent').value = title;
-            detectTags();
-
-            if (window.innerWidth < 768) {
-                document.getElementById('sidebar').classList.remove('open');
-            }
-            document.getElementById('noteTitle').focus();
-        }
-
-        function useTemplate(type) {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('zh-CN');
-            let template = templates[type]
-                .replace('{{date}}', dateStr);
-
-            document.getElementById('noteTitle').value = '';
-            document.getElementById('noteContent').value = template;
-            detectTags();
-
-            if (window.innerWidth < 768) {
-                document.getElementById('sidebar').classList.remove('open');
-            }
-            document.getElementById('noteTitle').focus();
+            document.getElementById('previewArea').innerHTML = html;
         }
 
         function addNote() {
@@ -716,8 +322,7 @@
                 id: editingId || Date.now(),
                 title: title || '无标题',
                 content: content,
-                timestamp: new Date().toISOString(),
-                isDaily: content.includes('日记') || content.includes('日记录')
+                timestamp: new Date().toISOString()
             };
 
             if (editingId) {
@@ -733,8 +338,6 @@
             updateStats();
             renderNotes();
             renderTagFilter();
-
-            if (showPreview) togglePreview();
         }
 
         function renderNotes(searchTerm = '') {
@@ -742,7 +345,7 @@
             const emptyState = document.getElementById('emptyState');
 
             let filtered = notes.filter(note => {
-                const term = searchTerm.toLowerCase();
+                const term = searchTerm.toLowerCase().replace('#', '');
                 const matchSearch = !term ||
                     note.title.toLowerCase().includes(term) ||
                     note.content.toLowerCase().includes(term);
@@ -776,26 +379,21 @@
                     if (!tags.includes(match[1])) tags.push(match[1]);
                 }
 
-                const preview = note.content.length > 100
-                    ? note.content.substring(0, 100) + '...'
-                    : note.content;
+                const preview = note.content.length > 80 ? note.content.substring(0, 80) + '...' : note.content;
 
                 return `
-                    <div class="note-card glass rounded-2xl p-5 border-2 relative group cursor-pointer"
-                         onclick="editNote(${note.id})">
+                    <div class="note-card glass rounded-2xl p-5 cursor-pointer" onclick="editNote(${note.id})">
                         <div class="flex justify-between items-start mb-3">
-                            <h3 class="font-bold text-lg flex-1 mr-2 line-clamp-2">${escapeHtml(note.title)}</h3>
-                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="event.stopPropagation(); deleteNote(${note.id})"
-                                        class="p-1.5 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors" title="删除">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
-                                </button>
-                            </div>
+                            <h3 class="font-bold text-lg line-clamp-2 flex-1">${escapeHtml(note.title)}</h3>
+                            <button onclick="event.stopPropagation(); deleteNote(${note.id})"
+                                    class="p-1.5 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                                <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"></path>
+                                </svg>
+                            </button>
                         </div>
-                        <p class="text-sm opacity-70 mb-4 whitespace-pre-wrap line-clamp-3">${escapeHtml(preview)}</p>
-                        ${tags.length > 0 ? `<div class="flex flex-wrap gap-1 mb-3">${tags.slice(0, 3).map(t => `<span class="tag text-xs">#${t}</span>`).join('')}${tags.length > 3 ? `<span class="text-xs opacity-50">+${tags.length - 3}</span>` : ''}</div>` : ''}
+                        <p class="text-sm opacity-70 mb-3 line-clamp-3">${escapeHtml(preview)}</p>
+                        ${tags.length > 0 ? `<div class="flex flex-wrap gap-1 mb-3">${tags.slice(0, 3).map(t => `<span class="tag text-xs">#${t}</span>`).join('')}</div>` : ''}
                         <div class="flex justify-between items-center pt-3 border-t border-gray-200/50">
                             <span class="timestamp text-xs opacity-50">${formatTime(note.timestamp)}</span>
                             <span class="text-xs opacity-50">${note.content.length} 字</span>
@@ -813,14 +411,12 @@
             document.getElementById('noteContent').value = note.content;
             editingId = id;
             detectTags();
-
-            document.querySelector('.glass.rounded-3xl').scrollIntoView({ behavior: 'smooth', block: 'center' });
             document.getElementById('noteTitle').focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function deleteNote(id) {
             if (!confirm('确定要删除这条笔记吗？')) return;
-
             notes = notes.filter(n => n.id !== id);
             saveNotes();
             updateStats();
@@ -833,46 +429,19 @@
             document.getElementById('noteContent').value = '';
             document.getElementById('detectedTags').innerHTML = '';
             editingId = null;
-
             if (showPreview) {
-                document.getElementById('contentPreview').innerHTML = '';
+                document.getElementById('previewArea').innerHTML = '';
             }
         }
 
         function saveNotes() {
-            localStorage.setItem('obsidianNotes', JSON.stringify(notes));
+            localStorage.setItem('myNotes', JSON.stringify(notes));
         }
 
         function updateStats() {
             const total = notes.length;
             const totalChars = notes.reduce((sum, note) => sum + note.content.length, 0);
-            const allTags = getAllTags();
-
-            const dates = notes.map(n => n.timestamp.split('T')[0]).filter((v, i, a) => a.indexOf(v) === i).sort().reverse();
-            let streak = 0;
-            const today = new Date().toISOString().split('T')[0];
-            let checkDate = today;
-
-            for (let i = 0; i < 365; i++) {
-                if (dates.includes(checkDate)) {
-                    streak++;
-                    const d = new Date(checkDate);
-                    d.setDate(d.getDate() - 1);
-                    checkDate = d.toISOString().split('T')[0];
-                } else if (i === 0) {
-                    const d = new Date(today);
-                    d.setDate(d.getDate() - 1);
-                    checkDate = d.toISOString().split('T')[0];
-                } else {
-                    break;
-                }
-            }
-
-            document.getElementById('totalNotes').textContent = total;
-            document.getElementById('totalChars').textContent = totalChars;
-            document.getElementById('streakDays').textContent = streak;
-            document.getElementById('totalTags').textContent = allTags.size;
-            document.getElementById('statsHeader').textContent = `共 ${total} 条笔记 · ${totalChars} 字 · 连续 ${streak} 天`;
+            document.getElementById('stats').textContent = `共 ${total} 条笔记 · ${totalChars} 字`;
         }
 
         function exportNotes() {
@@ -880,13 +449,12 @@
                 alert('没有笔记可导出');
                 return;
             }
-
             const dataStr = JSON.stringify(notes, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `notes_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.download = `notes_${new Date().toISOString().split('T')[0]}.json`;
             link.click();
             URL.revokeObjectURL(url);
         }
