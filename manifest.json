@@ -1,7 +1,7 @@
 ﻿{
   "name": "拾光",
   "short_name": "拾光",
-  "description": "一个简洁美观的个人记事本应用",
+  "description": "Obsidian风格的个人笔记应用 - 支持标签、Markdown、每日笔记和模板",
   "start_url": "/notes.html",
   "display": "standalone",
   "background_color": "#667eea",
