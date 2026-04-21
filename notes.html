@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>拾光</title>
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -32,6 +32,63 @@
             background: var(--bg-primary);
             min-height: 100vh;
             transition: background 0.3s;
+            -webkit-tap-highlight-color: transparent;
+            /* 适配刘海屏 */
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+
+        /* 触摸目标增大 */
+        .touch-target {
+            min-height: 44px;
+            min-width: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 工具栏按钮适配 */
+        .toolbar-btn {
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+        }
+
+        /* 移动端优化 */
+        @media (max-width: 390px) {
+            .glass {
+                border-radius: 16px !important;
+            }
+            
+            /* 工具栏按钮分组 */
+            .toolbar-group {
+                display: flex;
+                gap: 4px;
+            }
+            
+            /* 编辑器适配 */
+            #noteTitle {
+                font-size: 18px !important;
+                padding: 12px !important;
+            }
+            
+            #noteContent {
+                font-size: 16px !important;
+                line-height: 1.6 !important;
+            }
+        }
+
+        /* 适配小米13等高密度屏幕 */
+        @media (min-resolution: 300dpi) {
+            body {
+                font-size: 16px;
+            }
+            
+            .glass {
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            }
         }
 
         .glass {
@@ -181,17 +238,17 @@
                 </div>
 
                 <div class="flex gap-2 mb-4">
-                    <button onclick="toggleTheme()" class="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors" title="切换主题">
+                    <button onclick="toggleTheme()" class="touch-target rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors" title="切换主题">
                         <svg id="themeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                         </svg>
                     </button>
-                    <button onclick="toggleBackgroundSettings()" class="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors" title="设置背景">
+                    <button onclick="toggleBackgroundSettings()" class="touch-target rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors" title="设置背景">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
                     </button>
-                    <button onclick="toggleBackupManager()" class="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors" title="备份管理">
+                    <button onclick="toggleBackupManager()" class="touch-target rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors" title="备份管理">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
@@ -432,13 +489,13 @@
                 <!-- 工具栏 -->
                 <div class="flex items-center gap-2 mb-3 p-2 bg-gray-100 rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
                     <!-- 撤销/重做 -->
-                    <div class="flex items-center gap-2">
-                        <button onclick="undo()" class="p-2 hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="撤销">
+                    <div class="flex items-center gap-1 toolbar-group">
+                        <button onclick="undo()" class="toolbar-btn hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="撤销">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                             </svg>
                         </button>
-                        <button onclick="redo()" class="p-2 hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="重做">
+                        <button onclick="redo()" class="toolbar-btn hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="重做">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6"></path>
                             </svg>
@@ -448,15 +505,15 @@
                     <div class="h-6 border-r border-gray-300 dark:border-gray-600 mx-2 flex-shrink-0"></div>
 
                     <!-- 字体/字号 -->
-                    <div class="flex items-center gap-2">
-                        <select onchange="changeFont(this.value)" class="p-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs w-28 flex-shrink-0">
+                    <div class="flex items-center gap-1 toolbar-group">
+                        <select onchange="changeFont(this.value)" class="toolbar-btn rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs w-28 flex-shrink-0">
                             <option value="Noto Sans SC">默认字体</option>
                             <option value="JetBrains Mono">等宽字体</option>
                             <option value="SimSun">宋体</option>
                             <option value="SimHei">黑体</option>
                             <option value="Microsoft YaHei">微软雅黑</option>
                         </select>
-                        <select onchange="changeFontSize(this.value)" class="p-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs w-16 flex-shrink-0">
+                        <select onchange="changeFontSize(this.value)" class="toolbar-btn rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs w-16 flex-shrink-0">
                             <option value="12px">12</option>
                             <option value="14px" selected>14</option>
                             <option value="16px">16</option>
@@ -468,24 +525,24 @@
                     <div class="h-6 border-r border-gray-300 dark:border-gray-600 mx-2 flex-shrink-0"></div>
 
                     <!-- 粗体/斜体/下划线/删除线 -->
-                    <div class="flex items-center gap-2">
-                        <button onclick="formatText('**')" class="p-2 hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="加粗">
+                    <div class="flex items-center gap-1 toolbar-group">
+                        <button onclick="formatText('**')" class="toolbar-btn hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="加粗">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 4h8a4 4 0 014 4 4 4 0 01-4 4H6z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 12h9a4 4 0 014 4 4 4 0 01-4 4H6z"></path>
                             </svg>
                         </button>
-                        <button onclick="formatText('*')" class="p-2 hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="斜体">
+                        <button onclick="formatText('*')" class="toolbar-btn hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="斜体">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 4h4m-2 0v16m-4 0h4"></path>
                             </svg>
                         </button>
-                        <button onclick="formatText('__')" class="p-2 hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="下划线">
+                        <button onclick="formatText('__')" class="toolbar-btn hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="下划线">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                             </svg>
                         </button>
-                        <button onclick="formatText('~~')" class="p-2 hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="删除线">
+                        <button onclick="formatText('~~')" class="toolbar-btn hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="删除线">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v6m0 4v2M4 12h16"></path>
                             </svg>
@@ -495,9 +552,9 @@
                     <div class="h-6 border-r border-gray-300 dark:border-gray-600 mx-2 flex-shrink-0"></div>
 
                     <!-- 文字颜色/文字高亮/插入图片 -->
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1 toolbar-group">
                         <div class="relative flex-shrink-0">
-                            <button onclick="toggleColorMenu()" class="p-2 hover:bg-gray-200 rounded transition-colors flex items-center gap-0.5" title="文字颜色">
+                            <button onclick="toggleColorMenu()" class="toolbar-btn hover:bg-gray-200 rounded transition-colors flex items-center gap-0.5" title="文字颜色">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
                                 </svg>
@@ -514,7 +571,7 @@
                             </div>
                         </div>
                         <div class="relative flex-shrink-0">
-                            <button onclick="toggleHighlightMenu()" class="p-2 hover:bg-gray-200 rounded transition-colors" title="文字高亮">
+                            <button onclick="toggleHighlightMenu()" class="toolbar-btn hover:bg-gray-200 rounded transition-colors" title="文字高亮">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                                 </svg>
@@ -531,7 +588,7 @@
                             </div>
                         </div>
                         <div class="relative flex-shrink-0">
-                            <button onclick="document.getElementById('imageInput').click()" class="p-2 hover:bg-gray-200 rounded transition-colors" title="插入图片">
+                            <button onclick="document.getElementById('imageInput').click()" class="toolbar-btn hover:bg-gray-200 rounded transition-colors" title="插入图片">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
@@ -3067,6 +3124,7 @@
                                         break;
                                 }
                             } else {
+                                triggerHapticFeedback();
                                 editNote(noteId);
                                 closeMobileSidebar();
                             }
@@ -3106,6 +3164,16 @@
             setupAutoSave();
             // 初始化新建菜单
             initNewNoteMenu();
+            // 初始化键盘弹出检测
+            initKeyboardDetection();
+        }
+
+        // 触觉反馈（振动）
+        function triggerHapticFeedback() {
+            if (navigator.vibrate) {
+                // 短振动（10ms）
+                navigator.vibrate(10);
+            }
         }
 
         // 初始化新建菜单
@@ -3133,6 +3201,53 @@
             await clearForm();
             document.getElementById('noteTitle').focus();
             document.getElementById('newNoteMenu').classList.add('hidden');
+        }
+
+        // 键盘弹出检测和自动滚动
+        function initKeyboardDetection() {
+            // 检测视口变化
+            let viewportHeight = window.innerHeight;
+            
+            window.addEventListener('resize', () => {
+                const newHeight = window.innerHeight;
+                const heightDiff = viewportHeight - newHeight;
+                
+                // 检测键盘弹出（高度减少超过100px）
+                if (heightDiff > 100) {
+                    // 键盘弹出，滚动到输入焦点
+                    const activeElement = document.activeElement;
+                    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'DIV')) {
+                        activeElement.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }
+                }
+                
+                viewportHeight = newHeight;
+            });
+            
+            // 输入框获得焦点时自动滚动
+            const noteTitle = document.getElementById('noteTitle');
+            const noteContent = document.getElementById('noteContent');
+            
+            if (noteTitle) {
+                noteTitle.addEventListener('focus', function() {
+                    this.scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                });
+            }
+            
+            if (noteContent) {
+                noteContent.addEventListener('focus', function() {
+                    this.scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                });
+            }
         }
 
         document.addEventListener('DOMContentLoaded', init);
