@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="拾光">
     <meta name="theme-color" content="#667eea">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -53,7 +54,7 @@
             pointer-events: none;
         }
 
-        .dark body { background: var(--bg-primary); }
+        body.dark { background: var(--bg-primary); }
         .dark .glass { background: var(--bg-glass); color: var(--text-primary); }
         .dark .text-gray-800 { color: #f3f4f6; }
         .dark #noteTitle::placeholder { color: #aaa; }
@@ -120,12 +121,51 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
+
+        /* Markdown 预览样式 */
+        #previewArea h1 { font-size: 2em; font-weight: bold; margin: 0.5em 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.3em; }
+        #previewArea h2 { font-size: 1.5em; font-weight: bold; margin: 0.5em 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.3em; }
+        #previewArea h3 { font-size: 1.25em; font-weight: bold; margin: 0.5em 0; }
+        #previewArea h4 { font-size: 1em; font-weight: bold; margin: 0.5em 0; }
+        #previewArea p { margin: 0.8em 0; line-height: 1.6; }
+        #previewArea ul, #previewArea ol { margin: 0.8em 0; padding-left: 2em; }
+        #previewArea li { margin: 0.3em 0; }
+        #previewArea code { background: #f3f4f6; padding: 0.2em 0.4em; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.9em; }
+        #previewArea pre { background: #f3f4f6; padding: 1em; border-radius: 8px; overflow-x: auto; margin: 1em 0; }
+        #previewArea pre code { background: none; padding: 0; }
+        #previewArea blockquote { border-left: 4px solid #667eea; padding-left: 1em; margin: 1em 0; color: #6b7280; }
+        #previewArea a { color: #667eea; text-decoration: underline; }
+        #previewArea img { max-width: 100%; border-radius: 8px; margin: 0.5em 0; }
+        #previewArea hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5em 0; }
+        #previewArea table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+        #previewArea th, #previewArea td { border: 1px solid #e5e7eb; padding: 0.5em 1em; text-align: left; }
+        #previewArea th { background: #f3f4f6; font-weight: bold; }
+        .dark #previewArea h1, .dark #previewArea h2, .dark #previewArea h3, .dark #previewArea h4 { border-color: #4b5563; }
+        .dark #previewArea code { background: #374151; }
+        .dark #previewArea pre { background: #374151; }
+        .dark #previewArea blockquote { color: #9ca3af; }
+        .dark #previewArea th, .dark #previewArea td { border-color: #4b5563; }
+        .dark #previewArea th { background: #374151; }
+
+        /* Markdown 编辑器样式 */
+        #noteContent.markdown-source { font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.6; }
+        #noteContent.markdown-source * { white-space: pre-wrap; }
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen">
+    <!-- 移动端菜单按钮 -->
+    <button id="mobileMenuBtn" class="md:hidden fixed top-4 left-4 z-50 p-3 bg-white dark:bg-gray-800 rounded-xl shadow-lg" onclick="toggleMobileSidebar()">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+    </button>
+
+    <!-- 移动端侧边栏遮罩 -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden" onclick="closeMobileSidebar()"></div>
+
     <div class="flex flex-col md:flex-row gap-6">
-        <!-- 左侧笔记列表 -->
-        <div class="w-full md:w-80 flex-shrink-0">
+        <!-- 左侧笔记列表 - 移动端为抽屉 -->
+        <div id="sidebar" class="w-full md:w-80 flex-shrink-0 fixed md:relative inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 bg-white md:bg-transparent dark:bg-gray-900 md:dark:bg-transparent pt-16 md:pt-0 px-4 md:px-0 overflow-y-auto h-full md:h-auto">
             <!-- 头部 -->
             <div class="glass rounded-3xl p-6 mb-6 shadow-2xl">
                 <div class="flex items-center gap-3 mb-4">
@@ -230,6 +270,9 @@
                         <button onclick="exportNotes()" class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
                             导出备份
                         </button>
+                        <button onclick="exportEncryptionKey()" class="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
+                            导出密钥
+                        </button>
                     </div>
                 </div>
 
@@ -267,7 +310,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
-                            <div id="newNoteMenu" class="hidden absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 shadow-xl rounded-lg z-100 p-2 border border-gray-200 dark:border-gray-700">
+                            <div id="newNoteMenu" class="hidden absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 shadow-xl rounded-lg z-50 p-2 border border-gray-200 dark:border-gray-700">
                                 <div class="flex flex-col gap-2 p-2">
                                     <button onclick="newBlankNote()" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors w-full">
                                         <div class="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -494,6 +537,12 @@
                                 </svg>
                             </button>
                         </div>
+                        <div class="h-6 border-r border-gray-300 dark:border-gray-600 mx-2 flex-shrink-0"></div>
+                        <button onclick="toggleMarkdownMode()" id="mdModeBtn" class="p-2 hover:bg-gray-200 rounded transition-colors flex-shrink-0" title="Markdown 模式">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
                     </div>
                     <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
                 </div>
@@ -783,9 +832,10 @@
             const now = Date.now();
             const fiveMinutes = 5 * 60 * 1000;
             
-            // 每5分钟或每10次保存后创建快照
+            // 每5分钟或每10次保存后创建快照（异步，不阻塞主流程）
             if (now - lastSnapshotTime > fiveMinutes || saveCount >= 10) {
-                createSnapshot();
+                // 异步创建快照，不等待完成
+                createSnapshot().catch(err => console.error('快照创建失败:', err));
                 lastSnapshotTime = now;
                 saveCount = 0;
             }
@@ -802,11 +852,11 @@
                 const savedFrequency = localStorage.getItem('backupFrequency');
                 if (savedFrequency) {
                     backupFrequency = savedFrequency;
-                }
-                
-                // 检查是否需要设置备份
-                if (!localStorage.getItem('backupFrequency')) {
-                    await setupLocalBackup();
+                } else {
+                    // 首次访问，默认设置为手动备份，不弹出弹窗
+                    backupFrequency = 'manual';
+                    localStorage.setItem('backupFrequency', backupFrequency);
+                    console.log('首次访问，已默认设置为手动备份');
                 }
             } catch (error) {
                 console.error('初始化本地备份失败:', error);
@@ -974,15 +1024,6 @@
         async function migrateImagesToIndexedDB() {
             try {
                 const db = await initIndexedDB();
-                const transaction = db.transaction('snapshots', 'readwrite');
-                
-                // 为图片创建存储
-                if (!db.objectStoreNames.contains('images')) {
-                    const imageStore = db.createObjectStore('images', { keyPath: 'id', autoIncrement: true });
-                    imageStore.createIndex('noteId', 'noteId', { unique: false });
-                }
-                
-                const imageStore = transaction.objectStore('images');
                 
                 // 处理每个笔记
                 for (const note of notes) {
@@ -994,6 +1035,8 @@
                         const imageId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
                         
                         // 存储图片到IndexedDB
+                        const transaction = db.transaction('images', 'readwrite');
+                        const imageStore = transaction.objectStore('images');
                         await imageStore.add({
                             id: imageId,
                             noteId: note.id,
@@ -1231,12 +1274,22 @@
                 // 检查是否需要执行本地备份
                 checkLocalBackupNeeded();
             } catch (error) {
-                if (saveStatus) {
-                    saveStatus.textContent = '保存失败';
-                    saveStatus.classList.remove('text-yellow-500');
-                    saveStatus.classList.add('text-red-500');
+                if (error.name === 'QuotaExceededError' || error.message.includes('QuotaExceededError')) {
+                    if (saveStatus) {
+                        saveStatus.textContent = '存储空间已满！';
+                        saveStatus.classList.remove('text-yellow-500');
+                        saveStatus.classList.add('text-red-500');
+                    }
+                    alert('本地存储空间已满（5MB限制）！\n\n请尝试：\n1. 导出笔记备份\n2. 删除不需要的笔记\n3. 清理浏览器缓存\n\n点击确定前往备份管理...');
+                    toggleBackupManager();
+                } else {
+                    if (saveStatus) {
+                        saveStatus.textContent = '保存失败';
+                        saveStatus.classList.remove('text-yellow-500');
+                        saveStatus.classList.add('text-red-500');
+                    }
+                    console.error('保存失败:', error);
                 }
-                console.error('保存失败:', error);
             }
         }
 
@@ -1323,6 +1376,22 @@
         let showPreview = false;
 
 
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+            document.body.classList.toggle('overflow-hidden');
+        }
+
+        function closeMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
 
         function toggleTheme() {
             isDark = !isDark;
@@ -1622,7 +1691,7 @@
 
         function updatePreview() {
             const content = getEditorHTML();
-            document.getElementById('previewArea').innerHTML = content;
+            document.getElementById('previewArea').innerHTML = sanitizeHtml(content);
         }
 
         function formatText(mark) {
@@ -1837,7 +1906,7 @@
         }
 
         // 存储Base64图片到IndexedDB
-        async function storeBase64Image(imageData) {
+        async function storeBase64Image(imageData, noteId) {
             try {
                 const db = await initIndexedDB();
                 const transaction = db.transaction('images', 'readwrite');
@@ -1849,6 +1918,7 @@
                 // 存储图片
                 await imageStore.add({
                     id: imageId,
+                    noteId: noteId,
                     data: imageData,
                     timestamp: new Date().toISOString()
                 });
@@ -1877,7 +1947,7 @@
                     img.parentNode.replaceChild(span, img);
                 } else if (img.src.startsWith('data:image')) {
                     // 处理未存储的Base64图片
-                    const imageId = await storeBase64Image(img.src);
+                    const imageId = await storeBase64Image(img.src, editingId);
                     if (imageId) {
                         // 替换为引用标记
                         const span = document.createElement('span');
@@ -2220,22 +2290,6 @@
             event.target.value = '';
         }
 
-        function insertImage(imageData) {
-            const textarea = document.getElementById('noteContent');
-            const start = textarea.selectionStart;
-            
-            // 创建Markdown图片格式
-            const imageMarkdown = `\n![图片](${imageData})\n`;
-            
-            textarea.value = textarea.value.substring(0, start) + imageMarkdown + textarea.value.substring(start);
-            textarea.selectionStart = textarea.selectionEnd = start + imageMarkdown.length;
-            textarea.focus();
-            
-            // 触发input事件
-            const event = new Event('input', { bubbles: true });
-            textarea.dispatchEvent(event);
-        }
-
         // 拖拽粘贴图片支持
         document.getElementById('noteContent').addEventListener('paste', function(event) {
             const items = event.clipboardData.items;
@@ -2373,7 +2427,7 @@
                     
                     // 处理常规搜索词
                     if (regularTerms.length > 0) {
-                        const term = regularTerms.join(' ').replace('#', '');
+                        const term = regularTerms.join(' ').replaceAll('#', '');
                         matchSearch = note.title.toLowerCase().includes(term) ||
                             note.content.toLowerCase().includes(term);
                     }
@@ -2450,7 +2504,7 @@
                         ${note.pinned ? '<div class="absolute top-3 right-3 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10 shadow-md pointer-events-none">置顶</div>' : ''}
                         <div class="flex justify-between items-start mb-3">
                             <h3 class="font-bold text-xl line-clamp-2 flex-1">${escapeHtml(note.title)}</h3>
-                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div class="flex gap-1 ${String(editingId) === String(note.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 md:opacity-50'} transition-opacity">
                                 <button class="p-1.5 hover:bg-blue-50 rounded-lg transition-colors" data-action="pin" data-note-id="${note.id}" title="${note.pinned ? '取消置顶' : '置顶'}">
                                     <svg class="w-4 h-4 ${note.pinned ? 'text-blue-600 fill-blue-600' : 'text-blue-500'}" fill="${note.pinned ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
@@ -2509,20 +2563,48 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // 删除笔记时同步清理 IndexedDB 图片
+        async function deleteNoteImages(noteId) {
+            try {
+                const db = await initIndexedDB();
+                const transaction = db.transaction('images', 'readwrite');
+                const imageStore = transaction.objectStore('images');
+                const index = imageStore.index('noteId');
+                
+                return new Promise((resolve, reject) => {
+                    const request = index.getAll(noteId);
+                    request.onsuccess = async () => {
+                        const images = request.result;
+                        for (const image of images) {
+                            await new Promise((res, rej) => {
+                                const deleteReq = imageStore.delete(image.id);
+                                deleteReq.onsuccess = res;
+                                deleteReq.onerror = rej;
+                            });
+                        }
+                        resolve();
+                    };
+                    request.onerror = reject;
+                });
+            } catch (error) {
+                console.error('删除笔记图片失败:', error);
+            }
+        }
+
         async function deleteNote(id) {
             // 确保id是字符串类型
             id = String(id);
-            console.log('deleteNote called with id:', id, 'type:', typeof id);
-            console.log('notes array:', notes);
             const noteToDelete = notes.find(n => String(n.id) === id);
-            console.log('noteToDelete:', noteToDelete);
             if (!noteToDelete) {
                 alert('找不到要删除的笔记，id: ' + id);
                 return;
             }
             if (!confirm('确定要删除这条笔记吗？')) return;
+            
+            // 先删除笔记关联的图片
+            await deleteNoteImages(id);
+            
             notes = notes.filter(n => String(n.id) !== id);
-            console.log('notes after filter:', notes);
             await saveNotes();
             updateStats();
             renderNotes();
@@ -2580,12 +2662,6 @@
 
 
         // 移除HTML标签，获取纯文本
-        function stripHtml(html) {
-            const tmp = document.createElement('div');
-            tmp.innerHTML = html;
-            return tmp.textContent || tmp.innerText || '';
-        }
-
         function updateStats() {
             const total = notes.length;
             const totalChars = notes.reduce((sum, note) => sum + stripHtml(note.content).length, 0);
@@ -2600,7 +2676,7 @@
             }
             
             // 提供格式选择
-            const format = prompt('请选择导出格式：\n1. Markdown (md)\n2. 文本 (txt)\n3. JSON (json)', '1');
+            const format = prompt('请选择导出格式：\n1. Markdown (md)\n2. 文本 (txt)\n3. JSON (json)\n4. 完整备份(含加密密钥)', '1');
             
             let content, mimeType, extension;
             
@@ -2623,9 +2699,22 @@
                     mimeType = 'text/plain';
                     extension = 'txt';
                     break;
+                case '4':
+                    // 完整备份（包含加密密钥、文件夹等）
+                    const backupData = {
+                        version: 2,
+                        exportTime: new Date().toISOString(),
+                        encryptionKey: localStorage.getItem('encryptionKey'),
+                        folders: JSON.parse(localStorage.getItem('folders') || '[]'),
+                        notes: notes
+                    };
+                    content = JSON.stringify(backupData, null, 2);
+                    mimeType = 'application/json';
+                    extension = 'json';
+                    break;
                 case '3':
                 default:
-                    // JSON 格式
+                    // JSON 格式（仅笔记）
                     content = JSON.stringify(notes, null, 2);
                     mimeType = 'application/json';
                     extension = 'json';
@@ -2639,6 +2728,34 @@
             link.download = `notes_${new Date().toISOString().split('T')[0]}.${extension}`;
             link.click();
             URL.revokeObjectURL(url);
+        }
+
+        // 导出加密密钥
+        function exportEncryptionKey() {
+            const encryptionKey = localStorage.getItem('encryptionKey');
+            if (!encryptionKey) {
+                alert('没有找到加密密钥！');
+                return;
+            }
+            
+            const keyData = {
+                version: 1,
+                exportTime: new Date().toISOString(),
+                encryptionKey: encryptionKey,
+                notesCount: notes.length,
+                foldersCount: folders.length
+            };
+            
+            const content = JSON.stringify(keyData, null, 2);
+            const blob = new Blob([content], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `encryption_key_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            alert('密钥导出成功！请妥善保管此文件，丢失密钥将导致数据无法解密。');
         }
 
         // 计算内容hash
@@ -2664,96 +2781,148 @@
         }
 
         // 导入笔记
-        document.getElementById('importInput').addEventListener('change', function(event) {
+        document.getElementById('importInput').addEventListener('change', async function(event) {
             const files = event.target.files;
             if (!files.length) return;
 
-            Array.from(files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    const content = e.target.result;
-                    const fileName = file.name;
-                    const fileExtension = fileName.split('.').pop().toLowerCase();
+            for (const file of Array.from(files)) {
+                const content = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsText(file);
+                });
+                
+                const fileName = file.name;
+                const fileExtension = fileName.split('.').pop().toLowerCase();
 
-                    let title, noteContent;
+                // 检查是否是完整备份文件
+                if (fileExtension === 'json') {
+                    try {
+                        const backupData = JSON.parse(content);
+                        if (backupData.version === 2 && backupData.encryptionKey) {
+                            // 完整备份格式
+                            const importChoice = prompt(`检测到完整备份文件！\n\n导入将包含：\n- ${backupData.notes.length} 条笔记\n- ${(backupData.folders || []).length} 个文件夹\n- 加密密钥\n\n⚠️ 导入加密密钥将覆盖当前密钥，当前加密数据将无法解密！\n\n请选择：\n1. 完整导入（替换所有数据）\n2. 仅导入笔记\n3. 取消`, '2');
+                            
+                            if (importChoice === '1') {
+                                // 完整导入
+                                if (confirm('确定要完整导入吗？这将覆盖所有当前数据！')) {
+                                    localStorage.setItem('encryptionKey', backupData.encryptionKey);
+                                    if (backupData.folders) {
+                                        localStorage.setItem('folders', JSON.stringify(backupData.folders));
+                                        folders = backupData.folders;
+                                    }
+                                    notes = backupData.notes.map(note => ({
+                                        id: String(note.id || Date.now().toString()),
+                                        title: note.title || '无标题',
+                                        content: note.content || '',
+                                        timestamp: note.timestamp || new Date().toISOString(),
+                                        pinned: note.pinned || false,
+                                        starred: note.starred || false,
+                                        folder: note.folder || 'default',
+                                        tags: note.tags || []
+                                    }));
+                                    await saveNotes();
+                                    updateStats();
+                                    renderNotes();
+                                    renderFolders();
+                                    alert('完整导入成功！');
+                                }
+                                continue;
+                            } else if (importChoice === '2') {
+                                // 仅导入笔记
+                                notes = backupData.notes.map(note => ({
+                                    id: String(note.id || Date.now().toString()),
+                                    title: note.title || '无标题',
+                                    content: note.content || '',
+                                    timestamp: note.timestamp || new Date().toISOString(),
+                                    pinned: note.pinned || false,
+                                    starred: note.starred || false,
+                                    folder: note.folder || 'default',
+                                    tags: note.tags || []
+                                }));
+                                await saveNotes();
+                                updateStats();
+                                renderNotes();
+                                alert('仅笔记导入成功！');
+                                continue;
+                            } else {
+                                continue;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('解析备份文件失败:', e);
+                    }
+                }
 
-                    switch (fileExtension) {
-                        case 'md':
-                            // 处理Markdown文件
-                            title = fileName.replace('.md', '');
-                            noteContent = content;
+                let title, noteContent;
+
+                switch (fileExtension) {
+                    case 'md':
+                        title = fileName.replace('.md', '');
+                        noteContent = content;
+                        break;
+                    case 'txt':
+                        title = fileName.replace('.txt', '');
+                        noteContent = content.replace(/\n/g, '<br>');
+                        break;
+                    case 'html':
+                        title = fileName.replace('.html', '');
+                        noteContent = content;
+                        break;
+                    default:
+                        title = fileName;
+                        noteContent = content;
+                }
+
+                // 检查是否重复
+                const duplicateNote = await checkNoteDuplicate(title, noteContent);
+                let choice = null;
+                
+                if (duplicateNote) {
+                    choice = prompt(`发现重复笔记："${duplicateNote.title}"\n\n请选择操作：\n1. 跳过\n2. 覆盖\n3. 重命名\n\n请输入数字 1-3`, '1');
+                    
+                    switch (choice) {
+                        case '1':
+                            continue;
+                        case '2':
+                            duplicateNote.title = title;
+                            duplicateNote.content = noteContent;
+                            duplicateNote.timestamp = new Date().toISOString();
                             break;
-                        case 'txt':
-                            // 处理纯文本文件
-                            title = fileName.replace('.txt', '');
-                            noteContent = content.replace(/\n/g, '<br>');
-                            break;
-                        case 'html':
-                            // 处理HTML文件
-                            title = fileName.replace('.html', '');
-                            noteContent = content;
+                        case '3':
+                            const newTitle = prompt('请输入新标题：', title);
+                            if (!newTitle) continue;
+                            title = newTitle;
                             break;
                         default:
-                            title = fileName;
-                            noteContent = content;
+                            continue;
                     }
+                }
 
-                    // 检查是否重复
-                    const duplicateNote = await checkNoteDuplicate(title, noteContent);
-                    
-                    if (duplicateNote) {
-                        // 提示用户选择
-                        const choice = prompt(`发现重复笔记："${duplicateNote.title}"\n\n请选择操作：\n1. 跳过\n2. 覆盖\n3. 重命名\n\n请输入数字 1-3`, '1');
-                        
-                        switch (choice) {
-                            case '1':
-                                // 跳过
-                                return;
-                            case '2':
-                                // 覆盖
-                                duplicateNote.title = title;
-                                duplicateNote.content = noteContent;
-                                duplicateNote.timestamp = new Date().toISOString();
-                                // 保持原有的文件夹ID，确保一致性
-                                break;
-                            case '3':
-                                // 重命名
-                                const newTitle = prompt('请输入新标题：', title);
-                                if (!newTitle) return;
-                                title = newTitle;
-                                break;
-                            default:
-                                // 跳过
-                                return;
-                        }
-                    }
+                // 让用户选择目标文件夹
+                const folderNames = folders.map(f => f.name);
+                const folderChoice = prompt(`请选择导入到哪个文件夹：\n${folderNames.map((name, index) => `${index + 1}. ${name}`).join('\n')}\n\n请输入数字 1-${folderNames.length}`, '1');
+                const folderIndex = parseInt(folderChoice) - 1;
+                const targetFolder = folderIndex >= 0 && folderIndex < folders.length ? folders[folderIndex].id : 'default';
+                
+                // 创建新笔记（如果不是覆盖）
+                if (!duplicateNote || choice === '3') {
+                    const newNote = {
+                        id: Date.now().toString(),
+                        title: title,
+                        content: noteContent,
+                        timestamp: new Date().toISOString(),
+                        folder: targetFolder,
+                        tags: [],
+                        pinned: false
+                    };
+                    notes.unshift(newNote);
+                }
 
-                    // 让用户选择目标文件夹
-                    const folderNames = folders.map(f => f.name);
-                    const folderChoice = prompt(`请选择导入到哪个文件夹：\n${folderNames.map((name, index) => `${index + 1}. ${name}`).join('\n')}\n\n请输入数字 1-${folderNames.length}`, '1');
-                    const folderIndex = parseInt(folderChoice) - 1;
-                    const targetFolder = folderIndex >= 0 && folderIndex < folders.length ? folders[folderIndex].id : 'default';
-                    
-                    // 创建新笔记（如果不是覆盖）
-                    if (!duplicateNote || choice === '3') {
-                        const newNote = {
-                            id: Date.now().toString(),
-                            title: title,
-                            content: noteContent,
-                            timestamp: new Date().toISOString(),
-                            folder: targetFolder, // 使用用户选择的文件夹
-                            tags: [],
-                            pinned: false
-                        };
-
-                        notes.unshift(newNote);
-                    }
-
-                    await saveNotes();
-                    renderNotes();
-                };
-                reader.readAsText(file);
-            });
+                await saveNotes();
+                renderNotes();
+            }
 
             // 清空文件输入
             event.target.value = '';
@@ -2775,6 +2944,19 @@
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function sanitizeHtml(html) {
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            const scripts = div.querySelectorAll('script, iframe, object, embed');
+            scripts.forEach(el => el.remove());
+            div.querySelectorAll('*').forEach(el => {
+                for (const attr of [...el.attributes]) {
+                    if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
+                }
+            });
             return div.innerHTML;
         }
 
@@ -2839,7 +3021,14 @@
             renderNotes();
             renderTagFilter();
 
-            document.getElementById('searchInput').addEventListener('input', (e) => renderNotes(e.target.value));
+            // 搜索防抖
+            let searchTimer;
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(() => {
+                    renderNotes(e.target.value);
+                }, 300);
+            });
             document.getElementById('sortOption').addEventListener('change', () => renderNotes(document.getElementById('searchInput').value));
             document.getElementById('noteTitle').addEventListener('input', detectTags);
             document.getElementById('noteContent').addEventListener('input', (e) => {
@@ -2879,6 +3068,7 @@
                                 }
                             } else {
                                 editNote(noteId);
+                                closeMobileSidebar();
                             }
                         }
                     }
@@ -2952,7 +3142,8 @@
         <script>
             if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
                 window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/service-worker.js')
+                    const swPath = './service-worker.js';
+                    navigator.serviceWorker.register(swPath)
                         .then((registration) => {
                             console.log('Service Worker 注册成功:', registration.scope);
                         })
